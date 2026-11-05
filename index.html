@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="pt-MZ">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#061541" />
+    <meta name="description" content="SARCA — mobilidade simples, segura e transparente para Moçambique." />
+    <title>SARCA | Mobilidade que aproxima</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="site-header" id="inicio">
+        <a class="brand" href="#inicio" aria-label="SARCA, início">
+          <span class="brand-mark"><img src="assets/sarca-emblem.png" alt="" /></span>
+          <span>
+            <strong>SARCA</strong>
+            <small>Mobilidade que aproxima</small>
+          </span>
+        </a>
+
+        <nav class="desktop-nav" aria-label="Navegação principal">
+          <a href="#como-funciona">Como funciona</a>
+          <a href="#para-quem">Para quem</a>
+          <a href="#seguranca">Segurança</a>
+          <a href="#contacto">Contacto</a>
+        </nav>
+
+        <a class="header-link" href="#aceder">Aceder ao SARCA <span aria-hidden="true">↗</span></a>
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-menu" aria-label="Abrir menu">☰</button>
+      </header>
+
+      <div class="mobile-menu" id="mobile-menu" hidden>
+        <a href="#como-funciona">Como funciona</a>
+        <a href="#para-quem">Para quem</a>
+        <a href="#seguranca">Segurança</a>
+        <a href="#contacto">Contacto</a>
+      </div>
+
+      <main>
+        <section class="hero section-pad">
+          <div class="hero-copy reveal">
+            <p class="eyebrow"><span class="eyebrow-line"></span> Feito para Moçambique</p>
+            <h1>Chegar bem.<br /><em>Chegar juntos.</em></h1>
+            <p class="hero-lede">O SARCA aproxima passageiros, motoristas e entregas numa experiência simples, transparente e pensada para o ritmo das nossas cidades.</p>
+            <div class="hero-actions" id="aceder">
+              <a class="button button-primary" href="http://localhost:8083/">Entrar como passageiro <span aria-hidden="true">→</span></a>
+              <a class="button button-ghost" href="http://localhost:8084/">Entrar como motorista <span aria-hidden="true">→</span></a>
+            </div>
+            <p class="microcopy"><span class="status-dot"></span> Acesso Web seguro · links de teste preservados</p>
+          </div>
+
+          <div class="hero-visual reveal" aria-label="Emblema SARCA">
+            <div class="visual-glow"></div>
+            <div class="orbit orbit-one"></div>
+            <div class="orbit orbit-two"></div>
+            <div class="emblem-frame">
+              <img src="assets/sarca-emblem.png" alt="Emblema automóvel SARCA" />
+            </div>
+            <div class="floating-note note-top"><span class="note-icon">✦</span><span><strong>Preço claro</strong><small>Antes de confirmar</small></span></div>
+            <div class="floating-note note-bottom"><span class="note-icon">⌁</span><span><strong>Em movimento</strong><small>Com pessoas reais</small></span></div>
+          </div>
+        </section>
+
+        <section class="signal-strip" aria-label="Princípios SARCA">
+          <div><span>01</span><strong>Simples</strong><small>Poucos passos, menos espera</small></div>
+          <div><span>02</span><strong>Transparente</strong><small>Valor e percurso à vista</small></div>
+          <div><span>03</span><strong>Próximo</strong><small>Uma rede feita localmente</small></div>
+        </section>
+
+        <section class="story section-pad" id="como-funciona">
+          <div class="section-intro reveal">
+            <p class="eyebrow"><span class="eyebrow-line"></span> Uma nova forma de se mover</p>
+            <h2>Do mapa ao destino,<br /><span>sem complicar.</span></h2>
+            <p>O SARCA coloca o essencial no centro: onde estás, para onde vais e quem te vai acompanhar. Tudo o resto fica no lugar certo.</p>
+          </div>
+          <div class="story-grid">
+            <article class="story-card story-card-map reveal">
+              <div class="card-number">01</div>
+              <div class="mini-map" aria-hidden="true"><span class="map-road road-a"></span><span class="map-road road-b"></span><span class="map-road road-c"></span><span class="map-pin pin-a"></span><span class="map-pin pin-b"></span><span class="map-route"></span></div>
+              <div><h3>Escolhe o teu caminho</h3><p>Pesquisa bairros, avenidas, zonas e estabelecimentos em Moçambique. Confirma a origem e o destino no mapa.</p></div>
+            </article>
+            <article class="story-card story-card-price reveal">
+              <div class="card-number">02</div>
+              <div class="price-preview"><small>Estimativa da viagem</small><strong>120 <b>MZN</b></strong><span><i></i> 18 min &nbsp;·&nbsp; 7,4 km</span></div>
+              <div><h3>Decide com clareza</h3><p>Vê o percurso, o tempo e o preço antes de pedir. Se houver portagem ou ajuste, aparece separado.</p></div>
+            </article>
+            <article class="story-card story-card-arrive reveal">
+              <div class="card-number">03</div>
+              <div class="arrival-preview"><span class="avatar-placeholder">S</span><div><strong>Motorista a caminho</strong><small>Chega em cerca de 4 min</small></div><span class="signal-bars"><i></i><i></i><i></i></span></div>
+              <div><h3>Acompanha até chegar</h3><p>Quando o pedido é aceite, acompanhas a localização, os detalhes do carro e o estado da viagem em tempo real.</p></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="audience section-pad" id="para-quem">
+          <div class="split-heading reveal"><div><p class="eyebrow"><span class="eyebrow-line"></span> Uma plataforma, duas experiências</p><h2>Feito para quem<br /><span>viaja e conduz.</span></h2></div><p>Passageiros encontram o caminho. Motoristas encontram novas oportunidades. O SARCA cria uma ligação mais justa entre os dois lados.</p></div>
+          <div class="audience-grid">
+            <article class="audience-card rider-card reveal">
+              <div class="card-topline"><span class="tag">PASSAGEIRO</span><span class="card-arrow">↗</span></div>
+              <h3>O teu próximo destino começa aqui.</h3>
+              <p>Uma tela leve para pedir viagem ou entrega, acompanhar o percurso e receber apoio quando precisares.</p>
+              <ul><li><span>✓</span> Preço e rota antes de confirmar</li><li><span>✓</span> Motorista e veículo identificados</li><li><span>✓</span> Chat e suporte ligados ao pedido</li></ul>
+              <a href="http://localhost:8083/" class="text-link">Abrir SARCA Passageiro <span>→</span></a>
+            </article>
+            <article class="audience-card driver-card reveal">
+              <div class="card-topline"><span class="tag">MOTORISTA</span><span class="card-arrow">↗</span></div>
+              <h3>Mais controlo em cada viagem.</h3>
+              <p>Recebe pedidos com os detalhes essenciais, acompanha a operação e vê com clareza quanto vais receber.</p>
+              <ul><li><span>✓</span> Origem, destino e rendimento estimado</li><li><span>✓</span> Mapa operacional e estado online</li><li><span>✓</span> Operações e perfil no teu ritmo</li></ul>
+              <a href="http://localhost:8084/" class="text-link">Abrir SARCA Motorista <span>→</span></a>
+            </article>
+          </div>
+        </section>
+
+        <section class="safety section-pad" id="seguranca">
+          <div class="safety-visual reveal"><div class="shield-ring"><span>✦</span></div><div class="safety-line line-one"></div><div class="safety-line line-two"></div><div class="safety-badge badge-one"><strong>Rota</strong><small>Acompanhada</small></div><div class="safety-badge badge-two"><strong>Apoio</strong><small>Quando precisares</small></div></div>
+          <div class="safety-copy reveal"><p class="eyebrow"><span class="eyebrow-line"></span> Mais confiança em cada etapa</p><h2>A tecnologia fica<br /><span>a trabalhar por ti.</span></h2><p>Do primeiro toque à avaliação final, o SARCA foi pensado para deixar a informação importante visível e o caminho mais tranquilo.</p><div class="safety-list"><div><span>01</span><p><strong>Identidade à vista</strong><small>Conhece o motorista, o veículo e os detalhes necessários após a atribuição.</small></p></div><div><span>02</span><p><strong>Suporte ligado à viagem</strong><small>Quando algo acontece, o contexto acompanha o pedido até à Central.</small></p></div><div><span>03</span><p><strong>Preço respeitado</strong><small>Viagem, espera, portagens e descontos aparecem de forma separada.</small></p></div></div></div>
+        </section>
+
+        <section class="closing-cta section-pad reveal">
+          <div class="cta-orbit"></div><p class="eyebrow"><span class="eyebrow-line"></span> Pronto para avançar?</p><h2>O teu caminho.<br /><em>A tua cidade.</em></h2><p>Entra no SARCA e começa a mover-te com mais simplicidade.</p><div class="hero-actions"><a class="button button-primary" href="http://localhost:8083/">Pedir uma viagem <span aria-hidden="true">→</span></a><a class="button button-ghost" href="http://localhost:8084/">Quero conduzir <span aria-hidden="true">→</span></a></div>
+        </section>
+      </main>
+
+      <footer class="site-footer" id="contacto">
+        <div class="footer-main"><a class="brand footer-brand" href="#inicio"><span class="brand-mark"><img src="assets/sarca-emblem.png" alt="" /></span><span><strong>SARCA</strong><small>Mobilidade que aproxima</small></span></a><p>Uma experiência de mobilidade criada em Moçambique, para aproximar pessoas, destinos e oportunidades.</p><div class="footer-links"><a href="#como-funciona">Como funciona</a><a href="#seguranca">Segurança</a><a href="https://deligotriunfal.site" target="_blank" rel="noreferrer">Contacto</a></div></div>
+        <div class="footer-bottom"><span>© <span id="year"></span> DeliGo Triunfal, Lda. · SARCA</span><span class="footer-note"><i></i> Plataforma em evolução</span><a href="https://deligotriunfal.site" target="_blank" rel="noreferrer">deligotriunfal.site ↗</a></div>
+      </footer>
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>
