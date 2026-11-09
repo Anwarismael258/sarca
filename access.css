@@ -1,0 +1,17 @@
+.access-page{min-height:100vh;background:radial-gradient(circle at 80% 5%,rgba(35,86,194,.28),transparent 34%),var(--navy);color:var(--white)}
+.access-header{display:flex;align-items:center;justify-content:space-between;gap:20px;max-width:1000px;margin:0 auto;padding:26px 24px}
+.access-header .brand{flex:none}
+.access-back{color:var(--gold-soft);font-size:13px;font-weight:700}
+.access-main{display:grid;place-items:center;min-height:calc(100vh - 91px);padding:36px 24px 72px}
+.access-panel{width:min(720px,100%);padding:clamp(28px,6vw,62px);border:1px solid rgba(245,183,27,.34);border-radius:18px;background:linear-gradient(145deg,rgba(18,53,122,.78),rgba(5,19,57,.9));box-shadow:var(--shadow)}
+.access-panel.driver{background:linear-gradient(145deg,rgba(102,73,23,.8),rgba(8,25,69,.94))}
+.access-kicker{display:flex;align-items:center;gap:10px;margin:0 0 18px;color:var(--gold-soft);font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase}
+.access-kicker:before{content:'';width:28px;height:1px;background:var(--gold)}
+.access-panel h1{max-width:580px;margin:0 0 18px;font-size:clamp(40px,7vw,72px);line-height:1.02}
+.access-panel h1 span{color:var(--gold-soft)}
+.access-panel>p{max-width:570px;margin:0;color:var(--muted);font-size:16px;line-height:1.7}
+.access-points{display:grid;gap:12px;margin:30px 0;padding:0;list-style:none;color:#dce8ff;font-size:14px}
+.access-points li{display:flex;gap:10px;align-items:flex-start}.access-points li:before{content:'✓';color:var(--gold);font-weight:800}
+.access-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}.access-actions .button{min-width:210px}
+.access-note{margin-top:28px;padding-top:22px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;line-height:1.6}.access-note a{color:var(--gold-soft);font-weight:700}
+@media(max-width:540px){.access-header{padding:20px}.access-main{padding:18px 20px 42px}.access-panel{padding:28px 22px}.access-actions{flex-direction:column}.access-actions .button{width:100%;min-width:0}}
