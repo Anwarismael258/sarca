@@ -35,6 +35,16 @@ if (!window._flutter) {
 }
 _flutter.buildConfig = {"engineRevision":"e4b8dca3f1b4ede4c30371002441c88c12187ed6","builds":[{"compileTarget":"dart2js","renderer":"canvaskit","mainJsPath":"main.dart.js"},{}]};
 
+// Force the current Rider bundle when an older Web build is cached.
+if (_flutter.buildConfig?.builds) {
+  _flutter.buildConfig.builds = _flutter.buildConfig.builds.map((build) => ({
+    ...build,
+    mainJsPath: build.mainJsPath
+      ? `${build.mainJsPath}?v=20261110-rider-web-1`
+      : build.mainJsPath,
+  }));
+}
+
 
 const sarcaLoader = document.getElementById('sarca-loader');
 const sarcaLoaderMessage = document.getElementById('sarca-loader-message');
