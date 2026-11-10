@@ -1,4 +1,5 @@
 {
+  "buildCommand": "node scripts/prepare-web.cjs",
   "rewrites": [
     { "source": "/passageiro", "destination": "/passageiro/index.html" },
     { "source": "/motorista", "destination": "/motorista/index.html" }
