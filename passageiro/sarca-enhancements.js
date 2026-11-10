@@ -48,6 +48,11 @@
   var fullMapSurface = null;
   var fullMapCanvas = null;
   var fullMap = null;
+  var fallbackMap = null;
+  var fallbackMapLoadPromise = null;
+  var fallbackMapFitted = false;
+  var fallbackRiderLocationMarker = null;
+  var fallbackAssignedDriverMarker = null;
   var passengerCameraFollowing = true;
   var passengerCameraButton = null;
   var passengerCameraAnimationFrame = null;
@@ -325,6 +330,10 @@
       try { assignedDriverMarker.remove(); } catch (_) {}
     }
     assignedDriverMarker = null;
+    if (fallbackAssignedDriverMarker) {
+      try { fallbackAssignedDriverMarker.remove(); } catch (_) {}
+    }
+    fallbackAssignedDriverMarker = null;
     if (assignedDriverOverlay && assignedDriverOverlay.parentNode) assignedDriverOverlay.parentNode.removeChild(assignedDriverOverlay);
     assignedDriverOverlay = null;
     assignedDriverOverlayMoveBound = false;
@@ -335,9 +344,25 @@
       try { riderLocationMarker.remove(); } catch (_) {}
     }
     riderLocationMarker = null;
+    if (fallbackRiderLocationMarker) {
+      try { fallbackRiderLocationMarker.remove(); } catch (_) {}
+    }
+    fallbackRiderLocationMarker = null;
   }
 
   function syncRiderLocationMarker(location) {
+    if (fallbackMap && window.L && location &&
+        isFinite(Number(location.latitude)) && isFinite(Number(location.longitude))) {
+      if (!fallbackRiderLocationMarker) {
+        fallbackRiderLocationMarker = window.L.marker(
+          [Number(location.latitude), Number(location.longitude)],
+          { icon: window.L.divIcon({ className: 'sarCa-leaflet-rider-marker', html: '<span aria-hidden="true">👤</span>', iconSize: [28, 28], iconAnchor: [14, 28] }) }
+        ).addTo(fallbackMap);
+      } else {
+        fallbackRiderLocationMarker.setLatLng([Number(location.latitude), Number(location.longitude)]);
+      }
+      return;
+    }
     if (!fullMap || !window.mapboxgl || !location ||
         !isFinite(Number(location.latitude)) || !isFinite(Number(location.longitude))) {
       removeRiderLocationMarker();
@@ -357,6 +382,24 @@
   }
 
   function syncAssignedDriverMarker(activeTrip, assignedDriver, hasArrived, isStale) {
+    if (fallbackMap && window.L && activeTrip && assignedDriver &&
+        isFinite(Number(assignedDriver.latitude)) && isFinite(Number(assignedDriver.longitude))) {
+      var fallbackTarget = [Number(assignedDriver.latitude), Number(assignedDriver.longitude)];
+      if (!fallbackAssignedDriverMarker) {
+        fallbackAssignedDriverMarker = window.L.marker(fallbackTarget, {
+          icon: window.L.divIcon({ className: 'sarCa-leaflet-driver-marker', html: '<span aria-hidden="true">🚗</span>', iconSize: [30, 30], iconAnchor: [15, 30] })
+        }).addTo(fallbackMap);
+      } else {
+        fallbackAssignedDriverMarker.setLatLng(fallbackTarget);
+      }
+      var fallbackElement = fallbackAssignedDriverMarker.getElement ? fallbackAssignedDriverMarker.getElement() : null;
+      if (fallbackElement) {
+        fallbackElement.classList.toggle('is-arrived', !!hasArrived);
+        fallbackElement.classList.toggle('is-stale', !!isStale);
+        fallbackElement.title = hasArrived ? 'Motorista chegou ao ponto de recolha' : 'Motorista a caminho';
+      }
+      return;
+    }
     if (!fullMap || !window.mapboxgl || !activeTrip || !assignedDriver ||
         !isFinite(Number(assignedDriver.latitude)) || !isFinite(Number(assignedDriver.longitude))) {
       removeAssignedDriverMarker();
@@ -407,6 +450,10 @@
   }
 
   function syncFullMapMapObjects() {
+    if (fallbackMap && window.L) {
+      syncFallbackMapObjects();
+      return;
+    }
     if (!fullMap || !window.mapboxgl) return;
     var liveTrip = lastTripPayload && lastTripPayload.trip;
     var activeTrip = liveTrip && !['completed', 'cancelled', 'cancelled_by_driver', 'no_driver_found', 'payment_pending'].includes(String(liveTrip.status || ''));
@@ -754,6 +801,10 @@
   function syncFullMapSurface() {
     var location = lastCurrentLocation || window.__SARCA_CURRENT_LOCATION__ || null;
     if (fullMapSurface) fullMapSurface.style.backgroundImage = 'url("' + fullMapImageUrl(location) + '")';
+    if (fallbackMap && window.L) {
+      syncFallbackMapObjects();
+      return;
+    }
     syncFullMapMapObjects();
     if (!fullMap || !location) return;
     var latitude = Number(location.latitude);
@@ -771,8 +822,76 @@
     }
   }
 
+  function syncFallbackMapObjects() {
+    if (!fallbackMap || !window.L) return;
+    var location = lastCurrentLocation || window.__SARCA_CURRENT_LOCATION__ || null;
+    syncRiderLocationMarker(location);
+    var activeTrip = lastTripPayload && lastTripPayload.trip && activePassengerTrip(lastTripPayload);
+    var assignedPresence = getAssignedDriverPresence(lastTripPayload);
+    var assignedDriver = assignedPresence ? {
+      latitude: presenceLatitude(assignedPresence),
+      longitude: presenceLongitude(assignedPresence),
+    } : null;
+    if (activeTrip && assignedDriver) {
+      syncAssignedDriverMarker(lastTripPayload.trip, assignedDriver, false, false);
+    } else if (!activeTrip) {
+      removeAssignedDriverMarker();
+    }
+    if (fallbackMapFitted) return;
+    var points = [];
+    if (location && isFinite(Number(location.latitude)) && isFinite(Number(location.longitude))) {
+      points.push([Number(location.latitude), Number(location.longitude)]);
+    }
+    if (assignedDriver && isFinite(Number(assignedDriver.latitude)) && isFinite(Number(assignedDriver.longitude))) {
+      points.push([Number(assignedDriver.latitude), Number(assignedDriver.longitude)]);
+    }
+    if (lastDestinationSelection && isFinite(Number(lastDestinationSelection.latitude)) && isFinite(Number(lastDestinationSelection.longitude))) {
+      points.push([Number(lastDestinationSelection.latitude), Number(lastDestinationSelection.longitude)]);
+    }
+    if (!points.length) return;
+    if (points.length === 1) fallbackMap.setView(points[0], 15, { animate: false });
+    else fallbackMap.fitBounds(window.L.latLngBounds(points), { padding: [70, 70], maxZoom: 16, animate: false });
+    fallbackMapFitted = true;
+  }
+
+  function initLeafletFallbackMap() {
+    if (fallbackMap || !fullMapCanvas || !window.L) return;
+    try {
+      fallbackMap = window.L.map(fullMapCanvas, { zoomControl: false, attributionControl: true, preferCanvas: true })
+        .setView([-25.9692, 32.5732], 13);
+      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors',
+      }).addTo(fallbackMap);
+      fallbackMap.on('dragstart zoomstart', function () { pausePassengerCamera(); });
+      window.__SARCA_FULL_MAP__ = fallbackMap;
+      syncFallbackMapObjects();
+    } catch (_) { fallbackMap = null; }
+  }
+
+  function loadLeafletFallbackMap() {
+    if (window.L) { initLeafletFallbackMap(); return; }
+    if (fallbackMapLoadPromise) return;
+    fallbackMapLoadPromise = new Promise(function (resolve) {
+      var stylesheet = document.createElement('link');
+      stylesheet.rel = 'stylesheet';
+      stylesheet.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      stylesheet.onload = function () { resolve(); };
+      document.head.appendChild(stylesheet);
+      var script = document.createElement('script');
+      script.async = true;
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      script.onload = function () { initLeafletFallbackMap(); };
+      document.head.appendChild(script);
+    });
+  }
+
   function initFullMapSurfaceMap() {
     if (!fullMapCanvas || fullMap || !window.mapboxgl) return;
+    if (window.location.hostname === 'localhost' || !SARCA_MAPBOX_TOKEN || SARCA_MAPBOX_TOKEN.indexOf('__') === 0) {
+      loadLeafletFallbackMap();
+      return;
+    }
     try {
       window.mapboxgl.accessToken = SARCA_MAPBOX_TOKEN;
       fullMap = new window.mapboxgl.Map({
@@ -794,9 +913,13 @@
       fullMap.on('rotatestart', pausePassengerCamera);
       fullMap.on('pitchstart', pausePassengerCamera);
       fullMap.on('load', syncFullMapSurface);
+      fullMap.on('error', function () {
+        if (!fallbackMap) loadLeafletFallbackMap();
+      });
       ensurePassengerCameraButton();
     } catch (_) {
       fullMap = null;
+      loadLeafletFallbackMap();
     }
   }
 
@@ -812,7 +935,9 @@
     document.body.appendChild(surface);
     fullMapSurface = surface;
     fullMapCanvas = canvas;
-    if (window.mapboxgl) {
+    if (window.location.hostname === 'localhost') {
+      loadLeafletFallbackMap();
+    } else if (window.mapboxgl) {
       initFullMapSurfaceMap();
     } else if (!document.getElementById('sarCa-mapbox-gl-js')) {
       var stylesheet = document.createElement('link');
