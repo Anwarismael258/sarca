@@ -1,0 +1,6 @@
+{
+  "private": true,
+  "scripts": {
+    "vercel-build": "node scripts/prepare-web.cjs"
+  }
+}

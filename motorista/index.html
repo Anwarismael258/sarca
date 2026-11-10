@@ -1,38 +1,158 @@
-<!doctype html>
-<html lang="pt-MZ">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#061541" />
-    <meta name="description" content="Entrar no SARCA Motorista — conduzir e receber pedidos em Moçambique." />
-    <link rel="canonical" href="https://sarca.digital/motorista/" />
-    <link rel="icon" href="../assets/favicon.png" type="image/png" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" />
-    <link rel="stylesheet" href="../styles.css" />
-    <link rel="stylesheet" href="../access.css" />
-    <title>Entrar como motorista | SARCA</title>
-  </head>
-  <body class="access-page">
-    <header class="access-header">
-      <a class="brand" href="../" aria-label="Voltar ao site SARCA"><span class="brand-mark"><img src="../assets/sarCa-mark.svg" alt="" /></span><span><strong>SARCA</strong><small>Mobilidade que aproxima</small></span></a>
-      <a class="access-back" href="../">Voltar ao site</a>
-    </header>
-    <main class="access-main">
-      <section class="access-panel driver" aria-labelledby="page-title">
-        <p class="access-kicker">Motorista</p>
-        <h1 id="page-title">Entra no SARCA como <span>motorista.</span></h1>
-        <p>Recebe pedidos com origem, destino e rendimento estimado. A equipa DeliGo Triunfal envia o acesso oficial depois de confirmar o teu cadastro e a tua zona.</p>
-        <ul class="access-points">
-          <li>Mapa operacional e estado online</li>
-          <li>Detalhes da viagem antes de aceitar</li>
-          <li>Operações, carteira e perfil no teu ritmo</li>
-        </ul>
-        <div class="access-actions">
-          <a class="button button-primary" href="mailto:geral@deligotriunfal.site?subject=Entrar%20como%20motorista%20SARCA">Solicitar acesso oficial <span aria-hidden="true">→</span></a>
-          <a class="button button-ghost" href="../passageiro/">Entrar como passageiro</a>
-        </div>
-        <p class="access-note">Ainda não tens acesso? Envia o pedido para <a href="mailto:geral@deligotriunfal.site?subject=Entrar%20como%20motorista%20SARCA">geral@deligotriunfal.site</a> e a equipa responde com a entrada correta.</p>
-      </section>
-    </main>
-  </body>
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="/motorista/">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="SARCA Motorista">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="SARCA Motorista">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>SARCA Motorista</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    :root {
+      color-scheme: dark;
+      --sarca-bg: #071321;
+      --sarca-surface: rgba(10, 24, 44, 0.9);
+      --sarca-border: rgba(27, 92, 255, 0.24);
+      --sarca-primary: #1b5cff;
+      --sarca-accent: #f7b733;
+      --sarca-text: #f4f7fb;
+      --sarca-muted: #a4b4c6;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(circle at top, rgba(27, 92, 255, 0.18), transparent 42%),
+        linear-gradient(180deg, #050f1b 0%, #0a182c 42%, #133259 100%);
+      color: var(--sarca-text);
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    body {
+      overflow: hidden;
+    }
+
+    #sarca-loader {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      transition: opacity 260ms ease, visibility 260ms ease;
+    }
+
+    #sarca-loader.is-hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .sarca-loader__card {
+      width: min(100%, 520px);
+      padding: 28px;
+      border-radius: 28px;
+      border: 1px solid var(--sarca-border);
+      background: var(--sarca-surface);
+      box-shadow: 0 24px 90px rgba(0, 0, 0, 0.34);
+      backdrop-filter: blur(18px);
+    }
+
+    .sarca-loader__eyebrow {
+      margin: 0 0 10px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--sarca-accent);
+    }
+
+    .sarca-loader__title {
+      margin: 0;
+      font-size: clamp(32px, 5vw, 52px);
+      line-height: 0.94;
+      font-weight: 800;
+    }
+
+    .sarca-loader__title span {
+      display: block;
+      color: var(--sarca-primary);
+    }
+
+    .sarca-loader__message {
+      margin: 18px 0 0;
+      color: var(--sarca-muted);
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    .sarca-loader__progress {
+      position: relative;
+      overflow: hidden;
+      margin-top: 24px;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .sarca-loader__progress::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      width: 38%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--sarca-primary), var(--sarca-accent));
+      animation: sarca-loader-slide 1.15s ease-in-out infinite;
+    }
+
+    .sarca-loader__hint {
+      margin-top: 14px;
+      font-size: 13px;
+      color: rgba(244, 247, 251, 0.72);
+    }
+
+    @keyframes sarca-loader-slide {
+      0% { transform: translateX(-120%); }
+      100% { transform: translateX(360%); }
+    }
+  </style>
+</head>
+<body>
+  <!--
+    You can customize the "flutter_bootstrap.js" script.
+    This is useful to provide a custom configuration to the Flutter loader
+    or to give the user feedback during the initialization process.
+
+    For more details:
+    * https://docs.flutter.dev/platform-integration/web/initialization
+  -->
+  <script src="flutter_bootstrap.js" async></script>
+</body>
 </html>
