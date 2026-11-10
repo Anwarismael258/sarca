@@ -1906,10 +1906,10 @@
         Object.keys(localStorage).filter(clearSessionKey).forEach(function (key) { localStorage.removeItem(key); });
         Object.keys(sessionStorage).filter(clearSessionKey).forEach(function (key) { sessionStorage.removeItem(key); });
       } catch (_) {}
-      // Let the original Flutter auth screen render after logout. The map shell
-      // is useful for an authenticated rider, but it must not become a guest
-      // landing page after the user explicitly chose "Sair".
-      window.location.replace(window.location.pathname + '?sarCa-original=1&build=20261105-login-after-signout');
+      // Keep logout inside the current SARCA Web UI. The old Flutter auth
+      // route is intentionally not used by the public Web App anymore.
+      try { window.history.replaceState({}, '', window.location.pathname + '?build=20261110-rider-web-1'); } catch (_) {}
+      renderPassengerAuthFallback();
     };
     if (!authorization) { complete(); return; }
     var redirected = false;
@@ -7336,7 +7336,8 @@
 
   function redirectPassengerToLogin() {
     clearRiderAuthStorage();
-    window.location.replace(window.location.pathname + '?sarCa-original=1&build=20261108-rider-session-required');
+    try { window.history.replaceState({}, '', window.location.pathname + '?build=20261110-rider-web-1'); } catch (_) {}
+    renderPassengerAuthFallback();
   }
 
   function boot() {
@@ -7347,7 +7348,8 @@
       originalAuthRoute = new URLSearchParams(window.location.search).get('sarCa-original') === '1';
     } catch (_) {}
     if (originalAuthRoute) {
-      watchForMapShellAfterLogin();
+      // Legacy URLs must still land on the current SARCA Web login.
+      renderPassengerAuthFallback();
       return;
     }
 
@@ -7357,7 +7359,7 @@
       // still an existing local session. It may restore the shell offline;
       // an online invalid/expired token is rejected and sent to login.
       if (!authorization && !(navigator.onLine === false && storedSessionHeader)) {
-        redirectPassengerToLogin();
+        renderPassengerAuthFallback();
         return;
       }
       bootProtected();
@@ -7366,7 +7368,7 @@
         bootProtected();
         return;
       }
-      redirectPassengerToLogin();
+      renderPassengerAuthFallback();
     });
   }
 
