@@ -2033,7 +2033,7 @@
       } catch (_) {}
       // Keep logout inside the current SARCA Web UI. The old Flutter auth
       // route is intentionally not used by the public Web App anymore.
-      try { window.history.replaceState({}, '', window.location.pathname + '?build=20261110-rider-auth-fix-1'); } catch (_) {}
+      try { window.history.replaceState({}, '', window.location.pathname + '?build=20261110-rider-map-fallback-1'); } catch (_) {}
       renderPassengerAuthFallback();
     };
     if (!authorization) { complete(); return; }
@@ -7461,7 +7461,7 @@
 
   function redirectPassengerToLogin() {
     clearRiderAuthStorage();
-    try { window.history.replaceState({}, '', window.location.pathname + '?build=20261110-rider-auth-fix-1'); } catch (_) {}
+    try { window.history.replaceState({}, '', window.location.pathname + '?build=20261110-rider-map-fallback-1'); } catch (_) {}
     renderPassengerAuthFallback();
   }
 
