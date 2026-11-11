@@ -40,7 +40,7 @@ if (_flutter.buildConfig?.builds) {
   _flutter.buildConfig.builds = _flutter.buildConfig.builds.map((build) => ({
     ...build,
     mainJsPath: build.mainJsPath
-      ? `${build.mainJsPath}?v=20261110-rider-mapbox-1`
+      ? `${build.mainJsPath}?v=20261111-rider-live-1`
       : build.mainJsPath,
   }));
 }
