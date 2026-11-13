@@ -4386,8 +4386,11 @@
   }
 
   function requestCurrentLocationForPickup() {
+    var actionKey = 'location:pickup';
+    if (!beginRiderAction(actionKey)) return;
     if (!window.navigator || !window.navigator.geolocation) {
       showLocationShortcutState('Ativa a localização no navegador/dispositivo', 'error');
+      endRiderAction(actionKey);
       return;
     }
     // Give the passenger immediate feedback from the last valid GPS fix while
@@ -4399,28 +4402,36 @@
       cachedLocation ? 'success' : 'loading'
     );
     navigator.geolocation.getCurrentPosition(async function (position) {
-      var location = applyCurrentLocationToPickupCard(position);
-      startNearbyDriversPolling();
-      // Fill the card and draw the GPS marker immediately. Reverse geocoding,
-      // central sync and weather must not keep the location button spinning.
-      resolveNearestLocalPlace(location).then(function (resolved) {
-        commitResolvedPickupLabel(resolved || location);
-      }).catch(function () {
-        commitResolvedPickupLabel(location);
-      });
-      publishRiderLocation(position).catch(function () {});
-      startRiderLocationPublishing();
-      showLocationShortcutState('✓ Origem preenchida', 'success');
-      setTimeout(function () { showLocationShortcutState('Usar localização atual', 'idle'); }, 2600);
-    }, function () {
-      if (cachedLocation) {
+      try {
+        var location = applyCurrentLocationToPickupCard(position);
+        startNearbyDriversPolling();
+        // Fill the card and draw the GPS marker immediately. Reverse geocoding,
+        // central sync and weather must not keep the location button spinning.
+        resolveNearestLocalPlace(location).then(function (resolved) {
+          commitResolvedPickupLabel(resolved || location);
+        }).catch(function () {
+          commitResolvedPickupLabel(location);
+        });
+        publishRiderLocation(position).catch(function () {});
+        startRiderLocationPublishing();
         showLocationShortcutState('✓ Origem preenchida', 'success');
-        renderCurrentLocationStatus('📍 ' + cachedLocation.label, 'success');
-        setTimeout(function () { showLocationShortcutState('Usar localização atual', 'idle'); }, 1800);
-        return;
+        setTimeout(function () { showLocationShortcutState('Usar localização atual', 'idle'); }, 2600);
+      } finally {
+        endRiderAction(actionKey);
       }
-      showLocationShortcutState('Permite a localização para continuar', 'error');
-      setTimeout(function () { showLocationShortcutState('Usar localização atual', 'idle'); }, 4200);
+    }, function () {
+      try {
+        if (cachedLocation) {
+          showLocationShortcutState('✓ Origem preenchida', 'success');
+          renderCurrentLocationStatus('📍 ' + cachedLocation.label, 'success');
+          setTimeout(function () { showLocationShortcutState('Usar localização atual', 'idle'); }, 1800);
+          return;
+        }
+        showLocationShortcutState('Permite a localização para continuar', 'error');
+        setTimeout(function () { showLocationShortcutState('Usar localização atual', 'idle'); }, 4200);
+      } finally {
+        endRiderAction(actionKey);
+      }
     }, { enableHighAccuracy: false, timeout: 6000, maximumAge: 60000 });
   }
 
@@ -6035,9 +6046,13 @@
     continueButton.type = 'button';
     var confirmButton = el('button', 'is-danger', options.confirmLabel || 'Confirmar');
     confirmButton.type = 'button';
+    var confirmed = false;
     var close = function () { if (modal.parentNode) modal.remove(); };
     continueButton.addEventListener('click', close);
     confirmButton.addEventListener('click', function () {
+      if (confirmed) return;
+      confirmed = true;
+      confirmButton.disabled = true;
       if (typeof options.onConfirm === 'function') options.onConfirm(close, confirmButton);
       else close();
     });
