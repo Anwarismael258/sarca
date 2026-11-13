@@ -43,7 +43,7 @@ if (_flutter.buildConfig?.builds) {
   _flutter.buildConfig.builds = _flutter.buildConfig.builds.map((build) => ({
     ...build,
     mainJsPath: build.mainJsPath
-      ? `${build.mainJsPath}?v=20261114-moz-phone-login-1`
+      ? `${build.mainJsPath}?v=20261114-moz-phone-login-2`
       : build.mainJsPath,
   }));
 }

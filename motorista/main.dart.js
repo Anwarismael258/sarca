@@ -78848,7 +78848,7 @@ $S:20}
 A.apj.prototype={
 $1(a){return a.ae(B.af,this.a,a.gbg())},
 $S:20}
-A.a__SARCA_MAPBOX_TOKEN__={
+A.apk.prototype={
 $1(a){return a.ae(B.af,this.a,a.gbg())},
 $S:20}
 A.apl.prototype={
@@ -95807,7 +95807,7 @@ q=s.b
 q.toString
 s=r.a(q).al$}}}
 A.a5r.prototype={}
-A.__SARCA_MAPBOX_TOKEN__={
+A.pk.prototype={
 smf(a){var s
 if(this.b===a)return
 this.b=a
