@@ -2887,6 +2887,11 @@
       .sarca-extra__header { display:flex; justify-content:space-between; align-items:center; gap:8px; font-weight:750; }
       .sarca-extra__muted { opacity:.72; font-size:10px; }
       .sarca-extra__identity { display:flex; align-items:center; gap:9px; margin-top:8px; }
+      .sarca-extra__identity--driver-card { align-items:flex-start; gap:12px; margin-top:10px; padding:12px; border:1px solid rgba(25,195,125,.72); border-radius:16px; background:linear-gradient(135deg,rgba(25,195,125,.24),rgba(10,52,42,.82)); box-shadow:0 8px 24px rgba(0,0,0,.2); }
+      .sarca-extra__identity--driver-card .sarca-extra__avatar { flex:0 0 58px; width:58px; height:58px; border:2px solid rgba(190,255,224,.82); box-shadow:0 4px 14px rgba(0,0,0,.24); }
+      .sarca-extra__identity--driver-card .sarca-extra__identity-copy { padding-top:1px; }
+      .sarca-extra__identity--driver-card .sarca-extra__identity-facts { margin-top:10px; }
+      .sarca-extra__identity--driver-card .sarca-extra__identity-fact--primary { background:rgba(25,195,125,.26); border-color:rgba(174,255,216,.64); }
       .sarca-extra__driver-name { margin-top:8px; font-size:18px; line-height:1.15; font-weight:900; color:#fff; }
       .sarca-extra__avatar { width:34px; height:34px; border-radius:50%; object-fit:cover; background:rgba(255,255,255,.12); display:grid; place-items:center; font-size:18px; }
       .sarca-extra__identity strong { display:block; font-size:17px; line-height:1.15; color:#fff; }
@@ -6527,7 +6532,7 @@
     }
     var driver = normalizedDriverDetails(payload && payload.driverDetails);
     if (driver) {
-      var driverCard = el('div', 'sarca-extra__identity sarca-extra__identity--details');
+      var driverCard = el('div', 'sarca-extra__identity sarca-extra__identity--details sarca-extra__identity--driver-card');
       if (driver.avatarUrl) {
         var driverImage = document.createElement('img');
         driverImage.className = 'sarca-extra__avatar';
@@ -6549,7 +6554,8 @@
       function addDriverFact(label, value, primary) {
         var fact = el('div', primary ? 'sarca-extra__identity-fact sarca-extra__identity-fact--primary' : 'sarca-extra__identity-fact');
         fact.appendChild(el('span', 'sarca-extra__identity-fact-label', label));
-        fact.appendChild(el('span', 'sarca-extra__identity-fact-value', value || 'A confirmar'));
+        var fallback = label === 'Matrícula' ? 'Matrícula não cadastrada' : 'A confirmar';
+        fact.appendChild(el('span', 'sarca-extra__identity-fact-value', value || fallback));
         facts.appendChild(fact);
       }
       addDriverFact('Contacto', driver.phone, false);
@@ -6757,7 +6763,7 @@
       tripExtraCard.appendChild(el('div', 'sarca-extra__notice', 'PIN de embarque: ' + String(boardingCode) + ' · diga estes 4 dígitos ao motorista para iniciar a viagem.'));
     }
     if (details) {
-      var identity = el('div', 'sarca-extra__identity');
+      var identity = el('div', 'sarca-extra__identity sarca-extra__identity--driver-card');
       if (details.avatarUrl) {
         var image = document.createElement('img');
         image.className = 'sarca-extra__avatar';
@@ -6772,15 +6778,17 @@
       } else {
         identity.appendChild(el('div', 'sarca-extra__avatar', '🚗'));
       }
-      tripExtraCard.appendChild(el('div', 'sarca-extra__driver-name', 'Motorista: ' + (details.fullName || 'A confirmar')));
       var identityCopy = el('div', 'sarca-extra__identity-copy');
+      identityCopy.appendChild(el('strong', '', 'Motorista: ' + (details.fullName || 'Motorista SARCA')));
+      identityCopy.appendChild(el('span', '', 'Motorista e viatura confirmados'));
       var vehicle = [details.vehicleColor, details.vehicleMake, details.vehicleModel].filter(Boolean).join(' ');
       var rating = details.rating !== '' && details.rating != null ? '★ ' + Number(details.rating).toFixed(1) : '';
       var identityFacts = el('div', 'sarca-extra__identity-facts');
       function addIdentityFact(label, value, primary) {
         var fact = el('div', primary ? 'sarca-extra__identity-fact sarca-extra__identity-fact--primary' : 'sarca-extra__identity-fact');
         fact.appendChild(el('span', 'sarca-extra__identity-fact-label', label));
-        fact.appendChild(el('span', 'sarca-extra__identity-fact-value', value || 'A confirmar'));
+        var fallback = label === 'Matrícula' ? 'Matrícula não cadastrada' : 'A confirmar';
+        fact.appendChild(el('span', 'sarca-extra__identity-fact-value', value || fallback));
         identityFacts.appendChild(fact);
       }
       addIdentityFact('Contacto', details.phone, false);
