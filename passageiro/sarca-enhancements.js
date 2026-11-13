@@ -1450,7 +1450,13 @@
 
       function renderTripDetails(container, trip, trackingPayload) {
         container.innerHTML = '';
-        var driver = trackingPayload && trackingPayload.driverDetails ? trackingPayload.driverDetails : (trip.driverDetails || null);
+        var driverSource = Object.assign({},
+          trip.driver_details || {},
+          trip.driverDetails || {},
+          trackingPayload && trackingPayload.driver_details || {},
+          trackingPayload && trackingPayload.driverDetails || {}
+        );
+        var driver = normalizedDriverDetails(driverSource);
         var origin = firstValue(trip, ['pickup_address', 'pickup_label', 'origin_label', 'origin_address'], 'Origem confirmada');
         var destination = firstValue(trip, ['dropoff_address', 'destination_label', 'destination_address', 'dropoff_label'], 'Destino confirmado');
         var fare = minorOrAmount(trip, 'final_fare_minor', 'final_fare') || minorOrAmount(trip, 'agreed_fare_minor', 'agreed_fare') || minorOrAmount(trip, 'estimated_fare_minor', 'estimated_fare');
@@ -6354,16 +6360,22 @@
 
   function normalizedDriverDetails(details) {
     if (!details || typeof details !== 'object') return null;
-    var rawPlate = firstTripValue(details, ['plateNumber', 'plate_number'], '');
+    var vehicle = details.vehicle && typeof details.vehicle === 'object'
+      ? details.vehicle
+      : (details.vehicleDetails && typeof details.vehicleDetails === 'object' ? details.vehicleDetails : {});
+    var rawPlate = firstTripValue(details,
+      ['plateNumber', 'plate_number', 'licensePlate', 'license_plate', 'registration', 'registrationNumber'],
+      firstTripValue(vehicle, ['plateNumber', 'plate_number', 'licensePlate', 'license_plate', 'registration', 'registrationNumber'], '')
+    );
     var plate = /^pending[-_]/i.test(String(rawPlate || '').trim()) ? '' : rawPlate;
     return {
       fullName: firstTripValue(details, ['fullName', 'full_name', 'driverName', 'driver_name'], 'Motorista associado'),
       phone: firstTripValue(details, ['phone', 'phone_e164', 'phoneE164'], ''),
       avatarUrl: firstTripValue(details, ['avatarUrl', 'avatar_url', 'photoUrl', 'photo_url'], ''),
       rating: firstTripValue(details, ['rating'], ''),
-      vehicleMake: firstTripValue(details, ['vehicleMake', 'vehicle_make'], ''),
-      vehicleModel: firstTripValue(details, ['vehicleModel', 'vehicle_model'], ''),
-      vehicleColor: firstTripValue(details, ['vehicleColor', 'vehicle_color'], ''),
+      vehicleMake: firstTripValue(details, ['vehicleMake', 'vehicle_make'], firstTripValue(vehicle, ['vehicleMake', 'vehicle_make', 'make'], '')),
+      vehicleModel: firstTripValue(details, ['vehicleModel', 'vehicle_model'], firstTripValue(vehicle, ['vehicleModel', 'vehicle_model', 'model'], '')),
+      vehicleColor: firstTripValue(details, ['vehicleColor', 'vehicle_color'], firstTripValue(vehicle, ['vehicleColor', 'vehicle_color', 'color'], '')),
       plateNumber: plate,
     };
   }
@@ -6676,7 +6688,13 @@
     if (previousDetailsPanel && !previousDetailsPanel.hidden) {
       openTripDetailsKey = String(trip.id || '');
     }
-    var details = normalizedDriverDetails(payload.driverDetails || null);
+    var detailSource = Object.assign({},
+      trip.driver_details || {},
+      trip.driverDetails || {},
+      payload.driver_details || {},
+      payload.driverDetails || {}
+    );
+    var details = normalizedDriverDetails(detailSource);
     var presence = getAssignedDriverPresence(payload);
     var reference = trip.pickup_access_point && typeof trip.pickup_access_point === 'object'
       ? String(trip.pickup_access_point.label || '').trim()
