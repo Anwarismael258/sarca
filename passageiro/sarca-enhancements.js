@@ -1818,6 +1818,33 @@
     if (lastTripPayload && lastTripPayload.trip) renderTripExtras(lastTripPayload);
   }
 
+  function riderNotificationIsTripUpdate(row) {
+    if (!row) return false;
+    var type = String(row.type || '').toUpperCase();
+    return [
+      'SARCA_DRIVER_ASSIGNED',
+      'SARCA_PRICE_OFFER_ACCEPTED',
+      'SARCA_DRIVER_ARRIVED',
+      'SARCA_TRIP_STARTED',
+      'SARCA_TRIP_COMPLETED',
+      'SARCA_TRIP_CANCELLED',
+    ].indexOf(type) !== -1;
+  }
+
+  function refreshRiderTripFromNotification(row) {
+    if (!riderNotificationIsTripUpdate(row) || !row.entity_id) return;
+    if (String(row.type || '').toUpperCase() === 'SARCA_TRIP_COMPLETED') {
+      queueTripAnnouncement(
+        String(row.entity_id) + ':completed',
+        'Chegámos ao destino. Obrigado por viajar com a SARCA!',
+      );
+    }
+    // Push rows are persisted before the notification is delivered. Refresh
+    // the authoritative trip immediately instead of waiting for the 10 s
+    // tracking fallback, so acceptance/arrival is visible in the same turn.
+    refreshTripTracking(String(row.entity_id));
+  }
+
   function formatRiderNotificationDate(value) {
     if (!value) return '';
     try {
@@ -1834,6 +1861,7 @@
           if (riderNotificationInitialized && !riderNotificationKnownIds[row.id] && row.is_read !== true) {
             signalRiderIncomingMessage(row);
             notifyRiderInBrowser(row);
+            refreshRiderTripFromNotification(row);
           }
           riderNotificationKnownIds[row.id] = true;
         }
@@ -4644,7 +4672,7 @@
       if (tripTrackingInFlight) return;
       tripTrackingInFlight = true;
       refreshTripTracking(trip.id).finally(function () { tripTrackingInFlight = false; });
-    }, 10000);
+    }, 4000);
   }
 
   function requestMapFollow(payload) {
