@@ -27,6 +27,19 @@
   var destinationSearchCache = Object.create(null);
   var lastAuthHeader = null;
   var requestInFlight = false;
+  // All rider mutations use a keyed client-side lane. A second tap on the
+  // same action is ignored until the first request settles.
+  var riderActionInFlight = Object.create(null);
+  function beginRiderAction(key) {
+    var actionKey = String(key || '').trim();
+    if (!actionKey || riderActionInFlight[actionKey]) return false;
+    riderActionInFlight[actionKey] = true;
+    return true;
+  }
+  function endRiderAction(key) {
+    var actionKey = String(key || '').trim();
+    if (actionKey) delete riderActionInFlight[actionKey];
+  }
   var voiceMode = 'voice';
   var voiceTimer = null;
   var voicePending = null;
@@ -5619,42 +5632,54 @@
   }
 
   async function reportTripIncident(tripId, eventType) {
-    var accessToken = readAccessToken();
-    if (!accessToken) throw new Error('Sessão necessária');
-    var response = await fetch(SARCA_SUPABASE_URL + '/functions/v1/report-sarca-safety-event', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + accessToken,
-        'apikey': SARCA_SUPABASE_KEY,
-      },
-      body: JSON.stringify({
-        tripId: tripId,
-        eventType: eventType || 'passenger_cannot_find_driver',
-        details: { source: 'rider_ui', pickupReference: pickupReference.trim() || null },
-      }),
-    });
-    if (!response.ok) throw new Error('Não foi possível enviar o pedido de ajuda');
-    return response.json();
+    var actionKey = 'incident:' + String(tripId || '') + ':' + String(eventType || 'passenger_cannot_find_driver');
+    if (!beginRiderAction(actionKey)) throw new Error('Esta ação já está a ser processada.');
+    try {
+      var accessToken = readAccessToken();
+      if (!accessToken) throw new Error('Sessão necessária');
+      var response = await fetch(SARCA_SUPABASE_URL + '/functions/v1/report-sarca-safety-event', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + accessToken,
+          'apikey': SARCA_SUPABASE_KEY,
+        },
+        body: JSON.stringify({
+          tripId: tripId,
+          eventType: eventType || 'passenger_cannot_find_driver',
+          details: { source: 'rider_ui', pickupReference: pickupReference.trim() || null },
+        }),
+      });
+      if (!response.ok) throw new Error('Não foi possível enviar o pedido de ajuda');
+      return response.json();
+    } finally {
+      endRiderAction(actionKey);
+    }
   }
 
   async function submitTripRating(tripId, value) {
-    var accessToken = readAccessToken();
-    if (!accessToken) throw new Error('Sessão necessária');
-    var response = await fetch(SARCA_SUPABASE_URL + '/rest/v1/rpc/submit_trip_rating', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + accessToken,
-        'apikey': SARCA_SUPABASE_KEY,
-      },
-      body: JSON.stringify({ p_trip_id: tripId, p_rating: value, p_comment: null }),
-    });
-    if (!response.ok) {
-      var failure = await response.json().catch(function () { return {}; });
-      throw new Error(failure.message || failure.hint || failure.error || 'Não foi possível guardar a avaliação');
+    var actionKey = 'rating:' + String(tripId || '');
+    if (!beginRiderAction(actionKey)) throw new Error('Esta ação já está a ser processada.');
+    try {
+      var accessToken = readAccessToken();
+      if (!accessToken) throw new Error('Sessão necessária');
+      var response = await fetch(SARCA_SUPABASE_URL + '/rest/v1/rpc/submit_trip_rating', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + accessToken,
+          'apikey': SARCA_SUPABASE_KEY,
+        },
+        body: JSON.stringify({ p_trip_id: tripId, p_rating: value, p_comment: null }),
+      });
+      if (!response.ok) {
+        var failure = await response.json().catch(function () { return {}; });
+        throw new Error(failure.message || failure.hint || failure.error || 'Não foi possível guardar a avaliação');
+      }
+      return response.json();
+    } finally {
+      endRiderAction(actionKey);
     }
-    return response.json();
   }
 
   function isTripAlreadyRatedError(error) {
@@ -5666,41 +5691,53 @@
   }
 
   async function confirmTripPayment(tripId, paymentMethod) {
-    var accessToken = readAccessToken();
-    if (!accessToken) throw new Error('Sessão necessária');
-    var response = await fetch(SARCA_SUPABASE_URL + '/functions/v1/sarca-progress-trip', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + accessToken,
-        'apikey': SARCA_SUPABASE_KEY,
-      },
-      body: JSON.stringify({ tripId: tripId, action: 'confirm_payment', paymentMethod: paymentMethod }),
-    });
-    if (!response.ok) {
-      var failure = await response.json().catch(function () { return {}; });
-      throw new Error(failure.message || failure.hint || failure.error || 'Não foi possível confirmar o pagamento');
+    var actionKey = 'payment:' + String(tripId || '') + ':' + String(paymentMethod || '');
+    if (!beginRiderAction(actionKey)) throw new Error('Esta ação já está a ser processada.');
+    try {
+      var accessToken = readAccessToken();
+      if (!accessToken) throw new Error('Sessão necessária');
+      var response = await fetch(SARCA_SUPABASE_URL + '/functions/v1/sarca-progress-trip', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + accessToken,
+          'apikey': SARCA_SUPABASE_KEY,
+        },
+        body: JSON.stringify({ tripId: tripId, action: 'confirm_payment', paymentMethod: paymentMethod }),
+      });
+      if (!response.ok) {
+        var failure = await response.json().catch(function () { return {}; });
+        throw new Error(failure.message || failure.hint || failure.error || 'Não foi possível confirmar o pagamento');
+      }
+      return response.json();
+    } finally {
+      endRiderAction(actionKey);
     }
-    return response.json();
   }
 
   async function confirmCashReceipt(tripId) {
-    var accessToken = readAccessToken();
-    if (!accessToken) throw new Error('Sessão necessária');
-    var response = await fetch(SARCA_SUPABASE_URL + '/functions/v1/sarca-progress-trip', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + accessToken,
-        'apikey': SARCA_SUPABASE_KEY,
-      },
-      body: JSON.stringify({ tripId: tripId, action: 'confirm_cash_receipt' }),
-    });
-    if (!response.ok) {
-      var failure = await response.json().catch(function () { return {}; });
-      throw new Error(failure.message || failure.hint || failure.error || 'Não foi possível confirmar o pagamento em cash');
+    var actionKey = 'cash-receipt:' + String(tripId || '');
+    if (!beginRiderAction(actionKey)) throw new Error('Esta ação já está a ser processada.');
+    try {
+      var accessToken = readAccessToken();
+      if (!accessToken) throw new Error('Sessão necessária');
+      var response = await fetch(SARCA_SUPABASE_URL + '/functions/v1/sarca-progress-trip', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + accessToken,
+          'apikey': SARCA_SUPABASE_KEY,
+        },
+        body: JSON.stringify({ tripId: tripId, action: 'confirm_cash_receipt' }),
+      });
+      if (!response.ok) {
+        var failure = await response.json().catch(function () { return {}; });
+        throw new Error(failure.message || failure.hint || failure.error || 'Não foi possível confirmar o pagamento em cash');
+      }
+      return response.json();
+    } finally {
+      endRiderAction(actionKey);
     }
-    return response.json();
   }
 
   function playPaymentSuccessEffect() {
@@ -5882,28 +5919,34 @@
   }
 
   async function cancelTripBeforeStart(tripId, reasonCode, reasonText) {
-    var accessToken = readAccessToken();
-    if (!accessToken) throw new Error('Sessão necessária');
-    var response = await fetch(SARCA_SUPABASE_URL + '/functions/v1/sarca-cancel-trip', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + accessToken,
-        'apikey': SARCA_SUPABASE_KEY,
-      },
-      body: JSON.stringify({
-        tripId: tripId,
-        reasonCode: reasonCode,
-        reason: reasonText || 'O passageiro cancelou antes do início da viagem.',
-      }),
-    });
-    var payload = await response.json().catch(function () { return {}; });
-    if (!response.ok) {
-      throw new Error(payload && (payload.error || payload.message)
-        ? (payload.error || payload.message)
-        : 'Não foi possível cancelar a viagem');
+    var actionKey = 'cancel:' + String(tripId || '');
+    if (!beginRiderAction(actionKey)) throw new Error('Esta ação já está a ser processada.');
+    try {
+      var accessToken = readAccessToken();
+      if (!accessToken) throw new Error('Sessão necessária');
+      var response = await fetch(SARCA_SUPABASE_URL + '/functions/v1/sarca-cancel-trip', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + accessToken,
+          'apikey': SARCA_SUPABASE_KEY,
+        },
+        body: JSON.stringify({
+          tripId: tripId,
+          reasonCode: reasonCode,
+          reason: reasonText || 'O passageiro cancelou antes do início da viagem.',
+        }),
+      });
+      var payload = await response.json().catch(function () { return {}; });
+      if (!response.ok) {
+        throw new Error(payload && (payload.error || payload.message)
+          ? (payload.error || payload.message)
+          : 'Não foi possível cancelar a viagem');
+      }
+      return payload;
+    } finally {
+      endRiderAction(actionKey);
     }
-    return payload;
   }
 
   function resetPassengerAfterTripCancellation() {
@@ -6076,42 +6119,54 @@
   }
 
   async function requestTripReassignment(tripId, reasonCode) {
-    var accessToken = readAccessToken();
-    if (!accessToken) throw new Error('Sessão necessária');
-    var response = await fetch(SARCA_SUPABASE_URL + '/functions/v1/sarca-progress-trip', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + accessToken,
-        'apikey': SARCA_SUPABASE_KEY,
-      },
-      body: JSON.stringify({
-        tripId: tripId,
-        action: 'reassign_driver',
-        reasonCode: reasonCode || 'driver_not_progressing',
-        details: { source: 'rider_ui' },
-      }),
-    });
-    var payload = await response.json().catch(function () { return {}; });
-    if (!response.ok) throw new Error(payload.error || 'Não foi possível procurar outro motorista.');
-    return payload;
+    var actionKey = 'reassign:' + String(tripId || '');
+    if (!beginRiderAction(actionKey)) throw new Error('Esta ação já está a ser processada.');
+    try {
+      var accessToken = readAccessToken();
+      if (!accessToken) throw new Error('Sessão necessária');
+      var response = await fetch(SARCA_SUPABASE_URL + '/functions/v1/sarca-progress-trip', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + accessToken,
+          'apikey': SARCA_SUPABASE_KEY,
+        },
+        body: JSON.stringify({
+          tripId: tripId,
+          action: 'reassign_driver',
+          reasonCode: reasonCode || 'driver_not_progressing',
+          details: { source: 'rider_ui' },
+        }),
+      });
+      var payload = await response.json().catch(function () { return {}; });
+      if (!response.ok) throw new Error(payload.error || 'Não foi possível procurar outro motorista.');
+      return payload;
+    } finally {
+      endRiderAction(actionKey);
+    }
   }
 
   async function selectTripPriceOffer(tripId, offerId) {
-    var accessToken = readAccessToken();
-    if (!accessToken) throw new Error('Sessão necessária');
-    var response = await fetch(SARCA_SUPABASE_URL + '/functions/v1/sarca-progress-trip', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + accessToken,
-        'apikey': SARCA_SUPABASE_KEY,
-      },
-      body: JSON.stringify({ tripId: tripId, action: 'select_offer', offerId: offerId }),
-    });
-    var payload = await response.json().catch(function () { return {}; });
-    if (!response.ok) throw new Error(payload.error || 'Esta proposta já não está disponível.');
-    return payload;
+    var actionKey = 'offer:' + String(tripId || '') + ':' + String(offerId || '');
+    if (!beginRiderAction(actionKey)) throw new Error('Esta ação já está a ser processada.');
+    try {
+      var accessToken = readAccessToken();
+      if (!accessToken) throw new Error('Sessão necessária');
+      var response = await fetch(SARCA_SUPABASE_URL + '/functions/v1/sarca-progress-trip', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + accessToken,
+          'apikey': SARCA_SUPABASE_KEY,
+        },
+        body: JSON.stringify({ tripId: tripId, action: 'select_offer', offerId: offerId }),
+      });
+      var payload = await response.json().catch(function () { return {}; });
+      if (!response.ok) throw new Error(payload.error || 'Esta proposta já não está disponível.');
+      return payload;
+    } finally {
+      endRiderAction(actionKey);
+    }
   }
 
   async function refreshTripTracking(tripId) {
