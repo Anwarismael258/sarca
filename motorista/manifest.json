@@ -1,32 +1,32 @@
 {
-    "name": "driver_mobile",
-    "short_name": "driver_mobile",
+    "name": "SARCA Motorista",
+    "short_name": "SARCA Motorista",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#061541",
+    "theme_color": "#1B5CFF",
+    "description": "SARCA Motorista — pedidos e operações em Moçambique.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
         {
-            "src": "icons/Icon-192.png",
+            "src": "sar-ca-icon-192.png",
             "sizes": "192x192",
             "type": "image/png"
         },
         {
-            "src": "icons/Icon-512.png",
+            "src": "sar-ca-icon-512.png",
             "sizes": "512x512",
             "type": "image/png"
         },
         {
-            "src": "icons/Icon-maskable-192.png",
+            "src": "sar-ca-icon-192.png",
             "sizes": "192x192",
             "type": "image/png",
             "purpose": "maskable"
         },
         {
-            "src": "icons/Icon-maskable-512.png",
+            "src": "sar-ca-icon-512.png",
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "maskable"

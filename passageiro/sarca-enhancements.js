@@ -1,8 +1,8 @@
 (function () {
   'use strict';
 
-  // The key is intentionally used only by the Web build. Restrict it in the
-  // OpenWeather dashboard to the SARCA domain before publishing this artifact.
+  // Production injects this value during the Vercel build. Never commit keys
+  // to the public repository or ship them in a source artifact.
   var OPENWEATHER_KEY = '__OPENWEATHER_API_KEY__';
   var SARCA_SUPABASE_URL = 'https://tpmsgvkdjzoidvyiwwfk.supabase.co';
   var SARCA_SUPABASE_KEY = 'sb_publishable_VPBqfA_NVrvTs3fRqA49iw_NdOhXRTC';
@@ -1769,10 +1769,20 @@
       action.indexOf('MESSAGE') !== -1 || action.indexOf('SUPPORT') !== -1;
   }
 
+  function riderNotificationIsVisible(row) {
+    if (!row) return false;
+    var type = String(row.type || '').toUpperCase();
+    var channel = String(row.channel || '').toLowerCase();
+    // Offers are private dispatch work for the Driver app. They must never
+    // occupy the Rider notification bell or create a Rider popup.
+    if (type === 'SARCA_TRIP_OFFER' || channel === 'courier_dispatch' || channel === 'sarca_driver') return false;
+    return true;
+  }
+
   function renderRiderNotificationBadge(rows) {
     if (!riderNotificationButton) return;
     var list = Array.isArray(rows) ? rows : [];
-    var unreadMessages = list.filter(function (row) { return row && row.is_read !== true && riderNotificationIsMessage(row); }).length;
+    var unreadMessages = list.filter(function (row) { return riderNotificationIsVisible(row) && row.is_read !== true; }).length;
     riderNotificationButton.textContent = '🔔';
     riderNotificationButton.setAttribute('aria-label', unreadMessages ? 'Notificações, ' + unreadMessages + ' mensagens não lidas' : 'Notificações');
     riderNotificationButton.title = unreadMessages ? unreadMessages + ' mensagem(ns) não lida(s)' : 'Notificações';
@@ -1787,7 +1797,7 @@
   }
 
   function notifyRiderInBrowser(row) {
-    if (!row || !row.id || !row.title || !row.body || !('Notification' in window) || Notification.permission !== 'granted') return;
+    if (!riderNotificationIsVisible(row) || !row.id || !row.title || !row.body || !('Notification' in window) || Notification.permission !== 'granted') return;
     try {
       var notification = new Notification(String(row.title), { body: String(row.body), tag: 'sarCa-' + String(row.id), renotify: true, silent: false, vibrate: [0, 180, 120, 260] });
       notification.onclick = function () { window.focus(); notification.close(); openMapDashboardNotifications(); };
@@ -1817,7 +1827,7 @@
 
   function refreshRiderNotifications(listNode) {
     return profileRequest('/rest/v1/push_notifications?select=id,title,body,is_read,created_at,type,channel,action,entity_id&order=created_at.desc&limit=50', { headers: { Accept: 'application/json' } }).then(function (rows) {
-      riderNotificationRows = Array.isArray(rows) ? rows : [];
+      riderNotificationRows = (Array.isArray(rows) ? rows : []).filter(riderNotificationIsVisible);
       renderRiderNotificationBadge(riderNotificationRows);
       riderNotificationRows.forEach(function (row) {
         if (row && row.id) {
@@ -1906,10 +1916,10 @@
         Object.keys(localStorage).filter(clearSessionKey).forEach(function (key) { localStorage.removeItem(key); });
         Object.keys(sessionStorage).filter(clearSessionKey).forEach(function (key) { sessionStorage.removeItem(key); });
       } catch (_) {}
-      // Keep logout inside the current SARCA Web UI. The old Flutter auth
-      // route is intentionally not used by the public Web App anymore.
-      try { window.history.replaceState({}, '', window.location.pathname + '?build=20261110-rider-mapbox-1'); } catch (_) {}
-      renderPassengerAuthFallback();
+      // Let the original Flutter auth screen render after logout. The map shell
+      // is useful for an authenticated rider, but it must not become a guest
+      // landing page after the user explicitly chose "Sair".
+      window.location.replace(window.location.pathname + '?sarCa-original=1&build=20261105-login-after-signout');
     };
     if (!authorization) { complete(); return; }
     var redirected = false;
@@ -4446,20 +4456,28 @@
 
   function announceTripState(payload, trip, wait) {
     if (!trip || !trip.id) return;
-    var status = String(trip.status || '');
+    var rawStatus = String(trip.status || '');
+    var status = rawStatus;
     if (status === 'driver_assigned' && ['moving', 'en_route', 'heading_to_pickup'].includes(String(trip.driver_progress_state || trip.driverProgressState || '').toLowerCase())) status = 'driver_arriving';
     var suffix = wait && wait.state === 'active' ? ':wait_active' : wait && wait.state === 'paused' ? ':wait_paused' : '';
     var driverNear = driverIsActuallyNearPickup(payload, trip);
-    var key = String(trip.id) + ':' + status + suffix + (driverNear ? ':near' : '');
+    // Preserve the acceptance announcement even if the first authoritative
+    // snapshot already reports the driver moving towards the pickup.
+    var voiceStatus = rawStatus === 'driver_assigned' ? 'driver_assigned' : status;
+    // payment_pending is the terminal trip event from the driver's side. Use
+    // the same voice key as completed so the arrival announcement is played
+    // once, not once before and once after the payment is settled.
+    var voiceKeyStatus = voiceStatus === 'payment_pending' ? 'completed' : voiceStatus;
+    var key = String(trip.id) + ':' + voiceKeyStatus + suffix + (driverNear ? ':near' : '');
     var text = null;
-    if (status === 'searching_driver' || status === 'offered_to_driver') text = 'A procurar um motorista para si.';
-    else if (status === 'driver_assigned') text = 'Motorista encontrado! Veja os detalhes da sua viagem.';
-    else if (status === 'driver_arriving' && wait && wait.state === 'active') text = 'O seu motorista já chegou. Confirme a matrícula antes de entrar.';
-    else if (status === 'driver_arriving' && driverNear) text = 'O seu motorista está quase a chegar. Prepare-se.';
-    else if (status === 'driver_arriving') text = 'O seu motorista está a caminho.';
-    else if (status === 'in_progress') text = 'Bem-vindo à SARCA. A viagem começou. Por motivos de segurança, registamos o percurso desta viagem. Viaje com confiança.';
-    else if (status === 'completed') text = 'Chegámos ao seu destino. Obrigado por viajar com a SARCA!';
-    else if (status === 'cancelled_by_driver') text = 'O motorista cancelou. Vamos procurar outro para si.';
+    if (voiceStatus === 'searching_driver' || voiceStatus === 'offered_to_driver') text = 'A procurar um motorista para si.';
+    else if (voiceStatus === 'driver_assigned') text = 'Motorista encontrado! Veja os detalhes da sua viagem.';
+    else if (voiceStatus === 'driver_arriving' && wait && wait.state === 'active') text = 'O seu motorista já chegou. Confirme a matrícula antes de entrar.';
+    else if (voiceStatus === 'driver_arriving' && driverNear) text = 'O seu motorista está quase a chegar. Prepare-se.';
+    else if (voiceStatus === 'driver_arriving') text = 'O seu motorista está a caminho.';
+    else if (voiceStatus === 'in_progress') text = 'Bem-vindo à SARCA. A viagem começou. Por motivos de segurança, registamos o percurso desta viagem. Viaje com confiança.';
+    else if (voiceStatus === 'payment_pending' || voiceStatus === 'completed') text = 'Chegámos ao seu destino. Obrigado por viajar com a SARCA!';
+    else if (voiceStatus === 'cancelled_by_driver') text = 'O motorista cancelou. Vamos procurar outro para si.';
     if (text) queueTripAnnouncement(key, text);
   }
 
@@ -5122,6 +5140,7 @@
     }
     base.paymentMethod = explicitPaymentChoice || payment.selectedMethod || 'cash';
     base.pointsToUse = explicitPointsChoice;
+    clearPassengerRatingBeforeNewRequest();
     requestInFlight = true;
     confirmButton.disabled = true;
     confirmButton.textContent = 'A enviar pedido…';
@@ -5687,6 +5706,19 @@
     } catch (error) {
       // Private browsing or a restricted WebView may disable localStorage.
     }
+  }
+
+  // A new request starts a new passenger flow. Never let a pending rating
+  // marker or the old completed-trip card leak into the driver search state.
+  function clearPassengerRatingBeforeNewRequest() {
+    dismissedCompletedTripId = '';
+    try { window.localStorage.removeItem(pendingPassengerRatingKey); } catch (_) {}
+    if (tripExtraCard) {
+      tripExtraCard.classList.remove('is-visible', 'is-payment-required');
+      tripExtraCard.innerHTML = '';
+    }
+    if (tripStateCard) tripStateCard.classList.remove('is-accepted-hidden');
+    syncPassengerCardLayout('none');
   }
 
   function showPassengerRatingAfterPayment(tripId, paymentMethod) {
@@ -6504,6 +6536,16 @@
       : '';
     var status = String(trip.status || '');
     var paymentStatus = String(trip.payment_status || trip.paymentStatus || '').toLowerCase();
+    // Searching is its own UI state. A stale rating card must never remain
+    // visible while this trip is waiting for a driver.
+    if (status === 'searching_driver' || status === 'offered_to_driver') {
+      if (tripExtraCard) {
+        tripExtraCard.classList.remove('is-visible', 'is-payment-required');
+        tripExtraCard.innerHTML = '';
+      }
+      syncPassengerCardLayout('state');
+      return;
+    }
     var passengerConfirmedPaymentChoice = passengerConfirmedPayment(trip.id);
     var myRating = payload.myRating || trip.my_rating || trip.myRating || null;
     if (passengerRatedTrip(trip.id)) myRating = myRating || { localAcknowledgement: true };
@@ -7336,8 +7378,7 @@
 
   function redirectPassengerToLogin() {
     clearRiderAuthStorage();
-    try { window.history.replaceState({}, '', window.location.pathname + '?build=20261110-rider-mapbox-1'); } catch (_) {}
-    renderPassengerAuthFallback();
+    window.location.replace(window.location.pathname + '?sarCa-original=1&build=20261108-rider-session-required');
   }
 
   function boot() {
@@ -7348,8 +7389,7 @@
       originalAuthRoute = new URLSearchParams(window.location.search).get('sarCa-original') === '1';
     } catch (_) {}
     if (originalAuthRoute) {
-      // Legacy URLs must still land on the current SARCA Web login.
-      renderPassengerAuthFallback();
+      watchForMapShellAfterLogin();
       return;
     }
 
@@ -7359,7 +7399,7 @@
       // still an existing local session. It may restore the shell offline;
       // an online invalid/expired token is rejected and sent to login.
       if (!authorization && !(navigator.onLine === false && storedSessionHeader)) {
-        renderPassengerAuthFallback();
+        redirectPassengerToLogin();
         return;
       }
       bootProtected();
@@ -7368,7 +7408,7 @@
         bootProtected();
         return;
       }
-      renderPassengerAuthFallback();
+      redirectPassengerToLogin();
     });
   }
 

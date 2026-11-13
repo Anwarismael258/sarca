@@ -43,7 +43,7 @@ if (_flutter.buildConfig?.builds) {
   _flutter.buildConfig.builds = _flutter.buildConfig.builds.map((build) => ({
     ...build,
     mainJsPath: build.mainJsPath
-      ? `${build.mainJsPath}?v=20261110-driver-web-1`
+      ? `${build.mainJsPath}?v=20261109-points-summary-v2`
       : build.mainJsPath,
   }));
 }
