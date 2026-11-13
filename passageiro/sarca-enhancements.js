@@ -6378,6 +6378,7 @@
       phone: firstTripValue(details, ['phone', 'phone_e164', 'phoneE164'], ''),
       avatarUrl: firstTripValue(details, ['avatarUrl', 'avatar_url', 'photoUrl', 'photo_url'], ''),
       rating: firstTripValue(details, ['rating'], ''),
+      ratingCount: firstTripValue(details, ['ratingCount', 'rating_count', 'reviewCount', 'review_count', 'totalRatings', 'total_ratings'], ''),
       vehicleMake: firstTripValue(details, ['vehicleMake', 'vehicle_make'], firstTripValue(vehicle, ['vehicleMake', 'vehicle_make', 'make'], '')),
       vehicleModel: firstTripValue(details, ['vehicleModel', 'vehicle_model'], firstTripValue(vehicle, ['vehicleModel', 'vehicle_model', 'model'], '')),
       vehicleColor: firstTripValue(details, ['vehicleColor', 'vehicle_color'], firstTripValue(vehicle, ['vehicleColor', 'vehicle_color', 'color'], '')),
@@ -6554,15 +6555,20 @@
       function addDriverFact(label, value, primary) {
         var fact = el('div', primary ? 'sarca-extra__identity-fact sarca-extra__identity-fact--primary' : 'sarca-extra__identity-fact');
         fact.appendChild(el('span', 'sarca-extra__identity-fact-label', label));
-        var fallback = label === 'Matrícula' ? 'Matrícula não cadastrada' : 'A confirmar';
-        fact.appendChild(el('span', 'sarca-extra__identity-fact-value', value || fallback));
+        fact.appendChild(el('span', 'sarca-extra__identity-fact-value', value || '—'));
         facts.appendChild(fact);
       }
       addDriverFact('Contacto', driver.phone, false);
       addDriverFact('Carro', [driver.vehicleMake, driver.vehicleModel].filter(Boolean).join(' '), true);
       addDriverFact('Matrícula', driver.plateNumber, true);
-      var driverRating = driver.rating !== '' && driver.rating != null ? '★ ' + Number(driver.rating).toFixed(1) + ' / 5' : '';
-      addDriverFact('Avaliação', driverRating, false);
+      var driverRatingCount = Number(driver.ratingCount);
+      var driverRating = driver.rating !== '' && driver.rating != null && Number.isFinite(Number(driver.rating))
+        ? '★ ' + Number(driver.rating).toFixed(2) + ' / 5'
+        : '';
+      var driverRatingLabel = driverRating
+        ? driverRating + ' · ' + (Number.isFinite(driverRatingCount) ? driverRatingCount : 0) + ' ' + (driverRatingCount === 1 ? 'avaliação' : 'avaliações')
+        : (Number.isFinite(driverRatingCount) ? String(driverRatingCount) + ' ' + (driverRatingCount === 1 ? 'avaliação' : 'avaliações') : '—');
+      addDriverFact('Avaliação', driverRatingLabel, false);
       driverCopy.appendChild(facts);
       driverCard.appendChild(driverCopy);
       panel.appendChild(el('div', 'sarca-trip-details__title', 'Motorista e viatura'));
@@ -6782,19 +6788,24 @@
       identityCopy.appendChild(el('strong', '', 'Motorista: ' + (details.fullName || 'Motorista SARCA')));
       identityCopy.appendChild(el('span', '', 'Motorista e viatura confirmados'));
       var vehicle = [details.vehicleColor, details.vehicleMake, details.vehicleModel].filter(Boolean).join(' ');
-      var rating = details.rating !== '' && details.rating != null ? '★ ' + Number(details.rating).toFixed(1) : '';
+      var ratingCount = Number(details.ratingCount);
+      var rating = details.rating !== '' && details.rating != null && Number.isFinite(Number(details.rating))
+        ? '★ ' + Number(details.rating).toFixed(2) + ' / 5'
+        : '';
+      var ratingLabel = rating
+        ? rating + ' · ' + (Number.isFinite(ratingCount) ? ratingCount : 0) + ' ' + (ratingCount === 1 ? 'avaliação' : 'avaliações')
+        : (Number.isFinite(ratingCount) ? String(ratingCount) + ' ' + (ratingCount === 1 ? 'avaliação' : 'avaliações') : '—');
       var identityFacts = el('div', 'sarca-extra__identity-facts');
       function addIdentityFact(label, value, primary) {
         var fact = el('div', primary ? 'sarca-extra__identity-fact sarca-extra__identity-fact--primary' : 'sarca-extra__identity-fact');
         fact.appendChild(el('span', 'sarca-extra__identity-fact-label', label));
-        var fallback = label === 'Matrícula' ? 'Matrícula não cadastrada' : 'A confirmar';
-        fact.appendChild(el('span', 'sarca-extra__identity-fact-value', value || fallback));
+        fact.appendChild(el('span', 'sarca-extra__identity-fact-value', value || '—'));
         identityFacts.appendChild(fact);
       }
       addIdentityFact('Contacto', details.phone, false);
       addIdentityFact('Carro', vehicle, true);
       addIdentityFact('Matrícula', details.plateNumber, true);
-      addIdentityFact('Avaliação', rating || 'A confirmar', false);
+      addIdentityFact('Avaliação', ratingLabel, false);
       identityCopy.appendChild(identityFacts);
       identity.appendChild(identityCopy);
       tripExtraCard.appendChild(identity);
