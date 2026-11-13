@@ -2069,6 +2069,11 @@
       '#sarCa-auth-fallback .password-wrap input{padding-right:52px}',
       '#sarCa-auth-fallback .password-toggle{position:absolute;right:6px;top:6px;width:40px;min-height:38px;margin:0;border:0;border-radius:9px;background:transparent;color:#9fc8ff;font:700 19px system-ui;cursor:pointer}',
       '#sarCa-auth-fallback .password-toggle:hover{background:rgba(45,159,232,.14)}',
+      '#sarCa-auth-fallback .sarCa-moz-phone{display:flex;align-items:center;gap:9px;width:100%;box-sizing:border-box;padding:0 14px;border:1px solid rgba(255,255,255,.18);border-radius:12px;background:#102b46;color:#fff}',
+      '#sarCa-auth-fallback .sarCa-moz-phone:focus-within{border-color:#2d9fe8;box-shadow:0 0 0 3px rgba(45,159,232,.16)}',
+      '#sarCa-auth-fallback .sarCa-moz-phone .sarCa-moz-flag{font-size:21px;line-height:1;flex:none}',
+      '#sarCa-auth-fallback .sarCa-moz-phone .sarCa-moz-prefix{font-weight:900;color:#fff;white-space:nowrap}',
+      '#sarCa-auth-fallback .sarCa-moz-phone input{flex:1;width:auto;border:0!important;outline:0;background:transparent;padding:13px 0;box-shadow:none!important}',
       '#sarCa-auth-fallback button{width:100%;min-height:48px;margin-top:18px;border:0;border-radius:12px;background:#19c37d;color:#06111d;font:900 14px system-ui;cursor:pointer}',
       '#sarCa-auth-fallback button:disabled{opacity:.65}',
       '#sarCa-auth-fallback .secondary-actions{display:grid;gap:6px;margin-top:8px}',
@@ -2117,18 +2122,59 @@
       });
     }
 
+    function normalizeRiderMozPhone(raw) {
+      var digits = String(raw || '').replace(/\D/g, '');
+      if (digits.indexOf('258') === 0) digits = digits.slice(3);
+      if (digits.charAt(0) === '0') digits = digits.slice(1);
+      return digits.slice(0, 9);
+    }
+
+    function riderPhoneE164(raw) {
+      var local = normalizeRiderMozPhone(raw);
+      return local ? '+258' + local : '';
+    }
+
+    function bindMozambiquePhone(input) {
+      if (!input || input.__sarCaMozPhone) return;
+      input.__sarCaMozPhone = true;
+      var wrapper = document.createElement('span');
+      wrapper.className = 'sarCa-moz-phone';
+      var flag = document.createElement('span');
+      flag.className = 'sarCa-moz-flag';
+      flag.textContent = '🇲🇿';
+      var prefix = document.createElement('span');
+      prefix.className = 'sarCa-moz-prefix';
+      prefix.textContent = '+258';
+      input.parentNode.insertBefore(wrapper, input);
+      wrapper.appendChild(flag);
+      wrapper.appendChild(prefix);
+      wrapper.appendChild(input);
+      input.placeholder = '84 123 4567';
+      input.maxLength = 9;
+      input.inputMode = 'numeric';
+      input.autocomplete = 'tel-national';
+      input.setAttribute('aria-label', 'Número de telemóvel, código +258 fixo');
+      var update = function () {
+        var local = normalizeRiderMozPhone(input.value);
+        if (input.value !== local) input.value = local;
+      };
+      input.addEventListener('input', update);
+      update();
+    }
+
     function showLogin(phoneValue) {
-      card.innerHTML = '<p class="eyebrow">SARCA PASSAGEIRO</p><h1>Entrar no <span>SARCA</span></h1><p class="hint">Usa o número e a palavra-passe da tua conta para continuar.</p><form><label>Número de telemóvel</label><input name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+258841234567" required><label>Palavra-passe</label><div class="password-wrap"><input name="password" type="password" autocomplete="current-password" placeholder="A tua palavra-passe" required><button type="button" class="password-toggle" data-action="toggle-password" aria-label="Mostrar senha">👁</button></div><div class="error" role="alert"></div><button type="submit">Entrar como passageiro</button><div class="secondary-actions"><button type="button" class="secondary-button" data-action="forgot">Esqueceu a palavra-passe?</button><button type="button" class="secondary-button" data-action="register">Criar conta de passageiro</button></div></form><p class="footer">Mobilidade com confiança · SARCA</p>';
+      card.innerHTML = '<p class="eyebrow">SARCA PASSAGEIRO</p><h1>Entrar no <span>SARCA</span></h1><p class="hint">Usa o número e a palavra-passe da tua conta para continuar.</p><form><label>Número de telemóvel</label><input name="phone" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="84 123 4567" required><label>Palavra-passe</label><div class="password-wrap"><input name="password" type="password" autocomplete="current-password" placeholder="A tua palavra-passe" required><button type="button" class="password-toggle" data-action="toggle-password" aria-label="Mostrar senha">👁</button></div><div class="error" role="alert"></div><button type="submit">Entrar como passageiro</button><div class="secondary-actions"><button type="button" class="secondary-button" data-action="forgot">Esqueceu a palavra-passe?</button><button type="button" class="secondary-button" data-action="register">Criar conta de passageiro</button></div></form><p class="footer">Mobilidade com confiança · SARCA</p>';
       var form = card.querySelector('form');
       var error = card.querySelector('.error');
       var button = form.querySelector('button[type="submit"]');
       if (phoneValue) form.elements.phone.value = phoneValue;
+      bindMozambiquePhone(form.elements.phone);
       bindPasswordToggles();
       card.querySelector('[data-action="forgot"]').addEventListener('click', function () { showForgot(form.elements.phone.value); });
       card.querySelector('[data-action="register"]').addEventListener('click', function () { showRegister(form.elements.phone.value); });
       form.addEventListener('submit', function (event) {
         event.preventDefault();
-        var phone = String(form.elements.phone.value || '').trim();
+        var phone = riderPhoneE164(form.elements.phone.value);
         var password = String(form.elements.password.value || '');
         error.textContent = '';
         button.disabled = true;
@@ -2148,16 +2194,17 @@
     }
 
     function showRegister(phoneValue) {
-      card.innerHTML = '<p class="eyebrow">SARCA PASSAGEIRO</p><h1>Criar conta <span>SARCA</span></h1><p class="hint">Cria a tua conta com o código recebido por SMS.</p><form><label>Nome completo</label><input name="fullName" type="text" autocomplete="name" placeholder="O teu nome" required><label>Número de telemóvel</label><input name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+258841234567" required><button type="button" class="secondary-button" data-action="send-otp">Receber código por SMS</button><label>Código recebido</label><input name="code" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" required><label>Palavra-passe</label><div class="password-wrap"><input name="password" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres" required><button type="button" class="password-toggle" data-action="toggle-password" aria-label="Mostrar senha">👁</button></div><label class="terms"><input name="terms" type="checkbox"><span>Li e aceito os Termos e condições.</span></label><div class="error" role="alert"></div><button type="submit">Criar conta de passageiro</button><div class="secondary-actions"><button type="button" class="secondary-button back" data-action="login">Já tenho conta · Entrar</button></div></form><p class="footer">Mobilidade com confiança · SARCA</p>';
+      card.innerHTML = '<p class="eyebrow">SARCA PASSAGEIRO</p><h1>Criar conta <span>SARCA</span></h1><p class="hint">Cria a tua conta com o código recebido por SMS.</p><form><label>Nome completo</label><input name="fullName" type="text" autocomplete="name" placeholder="O teu nome" required><label>Número de telemóvel</label><input name="phone" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="84 123 4567" required><button type="button" class="secondary-button" data-action="send-otp">Receber código por SMS</button><label>Código recebido</label><input name="code" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" required><label>Palavra-passe</label><div class="password-wrap"><input name="password" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres" required><button type="button" class="password-toggle" data-action="toggle-password" aria-label="Mostrar senha">👁</button></div><label class="terms"><input name="terms" type="checkbox"><span>Li e aceito os Termos e condições.</span></label><div class="error" role="alert"></div><button type="submit">Criar conta de passageiro</button><div class="secondary-actions"><button type="button" class="secondary-button back" data-action="login">Já tenho conta · Entrar</button></div></form><p class="footer">Mobilidade com confiança · SARCA</p>';
       var form = card.querySelector('form');
       var error = card.querySelector('.error');
       var otpButton = card.querySelector('[data-action="send-otp"]');
       var submitButton = form.querySelector('button[type="submit"]');
       if (phoneValue) form.elements.phone.value = phoneValue;
+      bindMozambiquePhone(form.elements.phone);
       bindPasswordToggles();
       card.querySelector('[data-action="login"]').addEventListener('click', function () { showLogin(form.elements.phone.value); });
       otpButton.addEventListener('click', function () {
-        var phone = String(form.elements.phone.value || '').trim();
+        var phone = riderPhoneE164(form.elements.phone.value);
         error.textContent = '';
         otpButton.disabled = true;
         otpButton.textContent = 'A enviar…';
@@ -2175,7 +2222,7 @@
       form.addEventListener('submit', function (event) {
         event.preventDefault();
         if (!form.elements.terms.checked) { error.style.color = '#ff9ea6'; error.textContent = 'Aceita os Termos e condições para continuar.'; return; }
-        var body = { phone: String(form.elements.phone.value || '').trim(), code: String(form.elements.code.value || '').trim(), password: String(form.elements.password.value || ''), fullName: String(form.elements.fullName.value || '').trim(), appRole: 'passenger' };
+        var body = { phone: riderPhoneE164(form.elements.phone.value), code: String(form.elements.code.value || '').trim(), password: String(form.elements.password.value || ''), fullName: String(form.elements.fullName.value || '').trim(), appRole: 'passenger' };
         error.style.color = '#ff9ea6';
         error.textContent = '';
         submitButton.disabled = true;
@@ -2197,16 +2244,17 @@
     }
 
     function showForgot(phoneValue) {
-      card.innerHTML = '<p class="eyebrow">RECUPERAR ACESSO</p><h1>Esqueceu a <span>senha?</span></h1><p class="hint">Recebe um código por SMS e define uma nova palavra-passe.</p><form><label>Número de telemóvel</label><input name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+258841234567" required><button type="button" class="secondary-button" data-action="send-otp">Enviar código por SMS</button><label>Código recebido</label><input name="code" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" required><label>Nova palavra-passe</label><div class="password-wrap"><input name="password" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres" required><button type="button" class="password-toggle" data-action="toggle-password" aria-label="Mostrar senha">👁</button></div><div class="error" role="alert"></div><button type="submit">Alterar palavra-passe</button><div class="secondary-actions"><button type="button" class="secondary-button back" data-action="login">Voltar ao login</button></div></form><p class="footer">O código expira em 10 minutos · SARCA</p>';
+      card.innerHTML = '<p class="eyebrow">RECUPERAR ACESSO</p><h1>Esqueceu a <span>senha?</span></h1><p class="hint">Recebe um código por SMS e define uma nova palavra-passe.</p><form><label>Número de telemóvel</label><input name="phone" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="84 123 4567" required><button type="button" class="secondary-button" data-action="send-otp">Enviar código por SMS</button><label>Código recebido</label><input name="code" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" required><label>Nova palavra-passe</label><div class="password-wrap"><input name="password" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres" required><button type="button" class="password-toggle" data-action="toggle-password" aria-label="Mostrar senha">👁</button></div><div class="error" role="alert"></div><button type="submit">Alterar palavra-passe</button><div class="secondary-actions"><button type="button" class="secondary-button back" data-action="login">Voltar ao login</button></div></form><p class="footer">O código expira em 10 minutos · SARCA</p>';
       var form = card.querySelector('form');
       var error = card.querySelector('.error');
       var otpButton = card.querySelector('[data-action="send-otp"]');
       var submitButton = form.querySelector('button[type="submit"]');
       if (phoneValue) form.elements.phone.value = phoneValue;
+      bindMozambiquePhone(form.elements.phone);
       bindPasswordToggles();
       card.querySelector('[data-action="login"]').addEventListener('click', function () { showLogin(form.elements.phone.value); });
       otpButton.addEventListener('click', function () {
-        var phone = String(form.elements.phone.value || '').trim();
+        var phone = riderPhoneE164(form.elements.phone.value);
         error.textContent = '';
         otpButton.disabled = true;
         otpButton.textContent = 'A enviar…';
@@ -2223,7 +2271,7 @@
       });
       form.addEventListener('submit', function (event) {
         event.preventDefault();
-        var body = { action: 'reset_password', phone: String(form.elements.phone.value || '').trim(), code: String(form.elements.code.value || '').trim(), password: String(form.elements.password.value || '') };
+        var body = { action: 'reset_password', phone: riderPhoneE164(form.elements.phone.value), code: String(form.elements.code.value || '').trim(), password: String(form.elements.password.value || '') };
         error.style.color = '#ff9ea6';
         error.textContent = '';
         submitButton.disabled = true;
