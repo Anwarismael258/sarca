@@ -4,5 +4,13 @@
   "rewrites": [
     { "source": "/passageiro", "destination": "/passageiro/index.html" },
     { "source": "/motorista", "destination": "/motorista/index.html" }
+  ],
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.sarca.digital" }],
+      "destination": "https://sarca.digital/:path*",
+      "permanent": true
+    }
   ]
 }
