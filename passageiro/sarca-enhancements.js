@@ -1,8 +1,8 @@
 (function () {
   'use strict';
 
-  // Production injects this value during the Vercel build. Never commit keys
-  // to the public repository or ship them in a source artifact.
+  // The key is intentionally used only by the Web build. Restrict it in the
+  // OpenWeather dashboard to the SARCA domain before publishing this artifact.
   var OPENWEATHER_KEY = '__OPENWEATHER_API_KEY__';
   var SARCA_SUPABASE_URL = 'https://tpmsgvkdjzoidvyiwwfk.supabase.co';
   var SARCA_SUPABASE_KEY = 'sb_publishable_VPBqfA_NVrvTs3fRqA49iw_NdOhXRTC';
@@ -106,6 +106,9 @@
   var riderNotificationInitialized = false;
   var riderNotificationKnownIds = Object.create(null);
   var riderNotificationRows = [];
+  var riderCompletionRefreshInFlight = Object.create(null);
+  var riderCompletionRefreshRetryTimers = Object.create(null);
+  var riderActiveTab = 'home';
   var localPriorityPlacesPromise = null;
   var localPriorityPlaces = [];
 
@@ -1898,6 +1901,46 @@
     riderNotificationInitialized = false;
   }
 
+  function refreshRiderAfterTripCompletion(tripId) {
+    var id = String(tripId || '').trim();
+    var accessToken = readAccessToken();
+    if (!id || !accessToken) return Promise.resolve();
+    if (riderCompletionRefreshInFlight[id]) return riderCompletionRefreshInFlight[id];
+    var headers = { Authorization: 'Bearer ' + accessToken, apikey: SARCA_SUPABASE_KEY };
+    var refresh = Promise.all([
+      fetch(SARCA_SUPABASE_URL + '/functions/v1/sarca-list-my-trips?limit=50', { headers: headers }).catch(function () { return null; }),
+      refreshRiderNotifications().catch(function () { return []; }),
+      Promise.resolve(refreshRiderPoints()).catch(function () {}),
+      Promise.resolve(refreshRiderRewards()).catch(function () {}),
+    ]).then(function () {
+      // Rebuild the visible tab immediately so a completed trip cannot leave
+      // an old active card, wallet balance or trip count on screen.
+      if (riderActiveTab === 'trips' && mapDashboardTripsView) loadMapDashboardTripsView();
+      if (riderActiveTab === 'profile' && mapDashboardProfileView) loadMapDashboardProfileData();
+      if (lastTripPayload && lastTripPayload.trip && String(lastTripPayload.trip.id || '') === id) {
+        renderTripState(lastTripPayload);
+      }
+    }).finally(function () {
+      delete riderCompletionRefreshInFlight[id];
+    });
+    riderCompletionRefreshInFlight[id] = refresh;
+    return refresh;
+  }
+
+  function scheduleRiderCompletionRefresh(tripId) {
+    var id = String(tripId || '').trim();
+    if (!id) return;
+    refreshRiderAfterTripCompletion(id).catch(function () {});
+    // Payment settlement and the final rating row can commit just after the
+    // trip status. One short retry keeps both apps in the same final state.
+    if (!riderCompletionRefreshRetryTimers[id]) {
+      riderCompletionRefreshRetryTimers[id] = window.setTimeout(function () {
+        delete riderCompletionRefreshRetryTimers[id];
+        refreshRiderAfterTripCompletion(id).catch(function () {});
+      }, 1200);
+    }
+  }
+
   function openMapDashboardNotifications() {
     var sheet = openMapDashboardProfileSheet('Notificações', 'Mensagens de suporte, chat e atualizações da tua viagem.');
     var list = el('div', 'sarCa-profile-sheet-list', 'A carregar notificações…');
@@ -2542,6 +2585,7 @@
 
   function setMapDashboardTab(tab) {
     if (!mapDashboardShell) return;
+    riderActiveTab = tab;
     var isHome = tab === 'home';
     document.body.classList.toggle('sarCa-map-tab-home', isHome);
     document.body.classList.toggle('sarCa-map-tab-not-home', !isHome);
@@ -6077,8 +6121,13 @@
       var response = await fetch(SARCA_SUPABASE_URL + '/functions/v1/sarca-trip-live-tracking?tripId=' + encodeURIComponent(tripId), {
         headers: { 'Authorization': 'Bearer ' + accessToken, 'apikey': SARCA_SUPABASE_KEY },
       });
-      if (response.ok) handleTripResponse('sarca-trip-live-tracking', await response.json(), tripId);
-    } catch (_) {}
+      if (!response.ok) return null;
+      var payload = await response.json();
+      handleTripResponse('sarca-trip-live-tracking', payload, tripId);
+      var status = String(payload && payload.trip && payload.trip.status || '').toLowerCase();
+      if (['completed', 'payment_pending'].indexOf(status) !== -1) scheduleRiderCompletionRefresh(tripId);
+      return payload;
+    } catch (_) { return null; }
   }
 
   var activePassengerTripRestoreInFlight = false;
@@ -7255,7 +7304,13 @@
       // the confirmation card visible until the first polling response.
       if (payload.trip) renderTripState(payload);
     }
-    if (url.indexOf('trip-live-tracking') !== -1 || url.indexOf('sarca-progress-trip') !== -1) renderTripState(payload);
+    if (url.indexOf('trip-live-tracking') !== -1 || url.indexOf('sarca-progress-trip') !== -1) {
+      renderTripState(payload);
+      var terminalStatus = String(incomingTrip && incomingTrip.status || '').toLowerCase();
+      if (['completed', 'payment_pending'].indexOf(terminalStatus) !== -1 && incomingTripId) {
+        scheduleRiderCompletionRefresh(incomingTripId);
+      }
+    }
   }
 
   function installTripNetworkBridge() {
