@@ -40,6 +40,29 @@
     var actionKey = String(key || '').trim();
     if (actionKey) delete riderActionInFlight[actionKey];
   }
+  var riderSingleTapGuardInstalled = false;
+  function installRiderSingleTapGuard() {
+    if (riderSingleTapGuardInstalled) return;
+    riderSingleTapGuardInstalled = true;
+    // Network actions already use riderActionInFlight. This short capture
+    // guard also absorbs rapid double-taps on navigation, modal and payment
+    // buttons before two event handlers can be scheduled by the WebView.
+    document.addEventListener('click', function (event) {
+      var target = event.target;
+      var button = target && target.closest ? target.closest('button,[role="button"]') : null;
+      if (!button || button.disabled || button.dataset.sarcaAllowRepeat === 'true') return;
+      if (button.dataset.sarcaTapLocked === '1') {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
+      button.dataset.sarcaTapLocked = '1';
+      window.setTimeout(function () {
+        if (!button || !button.isConnected) return;
+        delete button.dataset.sarcaTapLocked;
+      }, 900);
+    }, true);
+  }
   var voiceMode = 'voice';
   var voiceTimer = null;
   var voicePending = null;
@@ -2960,6 +2983,7 @@
       .sarca-extra__actions button.has-unread { border-color:rgba(45,125,255,.9); background:rgba(45,125,255,.18); }
       .sarCa-rider-chat-badge { display:inline-grid; place-items:center; min-width:16px; height:16px; margin-left:5px; padding:0 4px; box-sizing:border-box; border-radius:99px; background:#e85d68; color:#fff; font:800 9px/1 system-ui,sans-serif; }
       .sarca-extra__actions button.is-danger { border-color:rgba(255,122,122,.55); color:#ffd0d0; }
+      .sarca-no-driver-actions .sarca-extra__primary-action { width:auto; min-height:30px; margin-top:0; padding:5px 8px; }
       .sarca-extra__receipt { margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,.14); }
       .sarca-extra__primary-action { width:100%; min-height:36px; margin-top:10px; border:0; border-radius:10px; background:#19c37d; color:#071321; font:inherit; font-weight:800; cursor:pointer; }
       .sarca-extra__primary-action:disabled { opacity:.65; cursor:wait; }
@@ -6155,6 +6179,64 @@
     }
   }
 
+  async function retryTripSearch(tripId, button, messageNode) {
+    if (!tripId || !button) return;
+    var actionKey = 'retry-search:' + String(tripId);
+    if (!beginRiderAction(actionKey)) return;
+    button.disabled = true;
+    button.textContent = 'A procurar…';
+    if (messageNode) messageNode.textContent = 'A procurar novamente por motoristas perto de ti…';
+    try {
+      var accessToken = readAccessToken();
+      if (!accessToken) throw new Error('Sessão necessária');
+      var response = await fetch(SARCA_SUPABASE_URL + '/functions/v1/sarca-progress-trip', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + accessToken,
+          'apikey': SARCA_SUPABASE_KEY,
+        },
+        body: JSON.stringify({
+          tripId: tripId,
+          action: 'retry_driver_search',
+        }),
+      });
+      var payload = await response.json().catch(function () { return {}; });
+      if (!response.ok) throw new Error(payload.error || 'Não foi possível procurar novamente.');
+      var currentTrip = lastTripPayload && lastTripPayload.trip;
+      if (currentTrip && String(currentTrip.id || '') === String(tripId)) {
+        lastTripPayload = Object.assign({}, lastTripPayload, {
+          trip: Object.assign({}, currentTrip, { status: 'searching_driver' }),
+        });
+        renderTripState(lastTripPayload);
+      }
+      await refreshTripTracking(tripId);
+    } catch (error) {
+      button.disabled = false;
+      button.textContent = 'PROCURAR NOVAMENTE';
+      if (messageNode) messageNode.textContent = error && error.message
+        ? error.message
+        : 'Não foi possível procurar novamente agora.';
+    } finally {
+      endRiderAction(actionKey);
+    }
+  }
+
+  function leaveNoDriverFoundState(tripId, button, messageNode) {
+    if (!tripId || !button) return;
+    var actionKey = 'leave-no-driver:' + String(tripId);
+    if (!beginRiderAction(actionKey)) return;
+    button.disabled = true;
+    button.textContent = 'A voltar…';
+    if (messageNode) messageNode.textContent = 'A atualizar o pedido…';
+    resetPassengerAfterTripCancellation();
+    showRiderActionToast('Procura encerrada.');
+    endRiderAction(actionKey);
+    // The terminal server state is already authoritative. Reload once so any
+    // stale map/card from the old search is also removed from the WebView.
+    window.setTimeout(function () { window.location.reload(); }, 180);
+  }
+
   function cancelTripWhileSearching(tripId, button, messageNode) {
     if (!tripId || !button) return;
     openPassengerConfirmModal({
@@ -7290,6 +7372,25 @@
       searchActions.appendChild(cancelSearch);
       searchActions.appendChild(searchMessage);
       tripStateCard.appendChild(searchActions);
+    } else if (status === 'no_driver_found') {
+      var noDriverActions = el('div', 'sarca-extra__actions sarca-no-driver-actions');
+      var retrySearch = el('button', 'sarca-extra__primary-action', 'PROCURAR NOVAMENTE');
+      retrySearch.type = 'button';
+      retrySearch.setAttribute('aria-label', 'Procurar motorista novamente');
+      var leaveSearch = el('button', 'is-danger', 'CANCELAR / VOLTAR');
+      leaveSearch.type = 'button';
+      leaveSearch.setAttribute('aria-label', 'Cancelar e voltar ao início');
+      var noDriverMessage = el('div', 'sarca-trip-state__meta', 'Podes tentar novamente ou voltar ao início.');
+      retrySearch.addEventListener('click', function () {
+        retryTripSearch(trip.id, retrySearch, noDriverMessage);
+      });
+      leaveSearch.addEventListener('click', function () {
+        leaveNoDriverFoundState(trip.id, leaveSearch, noDriverMessage);
+      });
+      noDriverActions.appendChild(retrySearch);
+      noDriverActions.appendChild(leaveSearch);
+      tripStateCard.appendChild(noDriverActions);
+      tripStateCard.appendChild(noDriverMessage);
     }
     var progress = el('div', 'sarca-trip-state__progress');
     var done = uiStatus === 'searching_driver' || uiStatus === 'offered_to_driver' ? 1 : uiStatus === 'driver_assigned' ? 2 : uiStatus === 'driver_arriving' ? 3 : uiStatus === 'in_progress' ? 4 : 5;
@@ -7526,6 +7627,7 @@
   function bootProtected() {
     // This one-shot route is used after an explicit logout so the original
     // phone/password auth flow is shown instead of the map guest shell.
+    installRiderSingleTapGuard();
     installCompactUi();
     installPointsRewardStyles();
     // Capture the restored Supabase session before the shell requests profile
