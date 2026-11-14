@@ -3410,6 +3410,28 @@
   var tripStateCard;
   var tripExtraCard;
   var lastTripPayload;
+  function passengerTripIsOpen(trip) {
+    if (!trip || typeof trip !== 'object') return false;
+    return ['searching_driver', 'offered_to_driver', 'driver_assigned', 'driver_arriving', 'in_progress', 'payment_pending'].indexOf(String(trip.status || '').toLowerCase()) !== -1;
+  }
+
+  function clearPassengerTripCards() {
+    stopTripTrackingPolling();
+    if (tripStateCard) {
+      tripStateCard.classList.remove('is-visible', 'is-accepted-hidden', 'is-searching', 'is-assigned');
+      tripStateCard.innerHTML = '';
+    }
+    if (tripExtraCard) {
+      tripExtraCard.classList.remove('is-visible', 'is-payment-required');
+      tripExtraCard.innerHTML = '';
+    }
+    if (paymentTollCard) {
+      paymentTollCard.classList.remove('is-visible');
+      paymentTollCard.innerHTML = '';
+    }
+    if (mapDashboardPanel) mapDashboardPanel.classList.remove('is-summary', 'is-trip-active');
+  }
+
   var pickupReference = '';
   var dismissedCompletedTripId = '';
   var ratingEligibleTripIds = Object.create(null);
@@ -5304,6 +5326,11 @@
       appendPaymentError('Confirma primeiro a origem e o destino para preparar o pedido.');
       return;
     }
+    if (lastTripPayload && passengerTripIsOpen(lastTripPayload.trip)) {
+      appendPaymentError('Já existe uma viagem em andamento. Cancela ou conclui esse pedido antes de criar outro.');
+      syncPassengerCardLayout('state');
+      return;
+    }
     if (negotiationChoice === 'negotiation') {
       var proposed = Number(negotiationProposedFare);
       if (!isFinite(proposed) || proposed <= 0) {
@@ -5921,6 +5948,9 @@
       tripExtraCard.innerHTML = '';
     }
     if (tripStateCard) tripStateCard.classList.remove('is-accepted-hidden');
+    lastTripPayload = null;
+    cacheActivePassengerTrip(null);
+    clearPassengerTripCards();
     syncPassengerCardLayout('none');
   }
 
@@ -6391,14 +6421,14 @@
       return response.ok ? response.json() : null;
     }).then(function (payload) {
       var trips = payload && Array.isArray(payload.trips) ? payload.trips : [];
-      var activeStatuses = ['searching_driver', 'offered_to_driver', 'driver_assigned', 'driver_arriving', 'in_progress', 'payment_pending', 'completed'];
+      var activeStatuses = ['searching_driver', 'offered_to_driver', 'driver_assigned', 'driver_arriving', 'in_progress', 'payment_pending'];
       var activeTrips = trips.filter(function (trip) {
         if (!trip || activeStatuses.indexOf(String(trip.status || '').toLowerCase()) === -1) return false;
         var status = String(trip.status || '').toLowerCase();
         var tripId = String(trip.id || trip.trip_id || '');
         // A completed trip that was already rated must never win restoration
         // over the current request or reopen the rating card on refresh.
-        if ((status === 'completed' || status === 'payment_pending') &&
+        if (status === 'payment_pending' &&
             (trip.my_rating || trip.myRating || passengerRatedTrip(tripId))) return false;
         return true;
       });
@@ -6429,6 +6459,8 @@
         renderTripState({ trip: null });
         return;
       }
+      var existingTrip = lastTripPayload && lastTripPayload.trip;
+      if (passengerTripIsOpen(existingTrip) && String(existingTrip.id || '') !== String(trackingPayload.trip.id || '')) return;
       lastTripPayload = trackingPayload;
       cacheActivePassengerTrip(trackingPayload);
       renderTripState(trackingPayload);
@@ -7539,8 +7571,7 @@
     var currentTripId = currentTrip && String(currentTrip.id || currentTrip.trip_id || '');
     var activeStatuses = ['searching_driver', 'offered_to_driver', 'driver_assigned', 'driver_arriving', 'in_progress'];
     if (incomingTripId && currentTripId && incomingTripId !== currentTripId &&
-        activeStatuses.indexOf(String(currentTrip.status || '')) !== -1 &&
-        activeStatuses.indexOf(String(incomingTrip.status || '')) !== -1) return;
+        activeStatuses.indexOf(String(currentTrip.status || '').toLowerCase()) !== -1) return;
     if (url.indexOf('preview-trip-offers') !== -1) {
       lastPreviewPayload = payload;
       // The preload is only for showing the four category prices. The
