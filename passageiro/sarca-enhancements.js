@@ -325,7 +325,16 @@
       passengerCameraNeedsInitialFit = true;
     }
     if (passengerCameraButton) passengerCameraButton.hidden = passengerCameraFollowing;
-    var driverPoint = [Number(driverLng), Number(driverLat)];
+    var matchedDriver = matchDriverToLiveRoute(trip, {
+      latitude: driverLat,
+      longitude: driverLng,
+      heading: presenceHeading(presence),
+      speedKmh: coordinateValue(presence, ['speedKmh', 'speed_kmh', 'speed']),
+      accuracyMeters: coordinateValue(presence, ['accuracyMeters', 'accuracy_meters', 'accuracy']),
+    });
+    var driverPoint = matchedDriver
+      ? [Number(matchedDriver.longitude), Number(matchedDriver.latitude)]
+      : [Number(driverLng), Number(driverLat)];
     var targetPoint = [Number(target.longitude), Number(target.latitude)];
     var cameraKey = tripKey + ':' +
       Math.round(Number(driverLng) * 10000) / 10000 + ',' +
@@ -921,7 +930,7 @@
       } catch (_) {}
     }
     if (maneuverSource) {
-      var maneuverFeatures = activeTrip && lastLiveRoute && Array.isArray(lastLiveRoute.maneuvers)
+      var maneuverFeatures = activeTrip && String(liveTrip.status || '') !== 'in_progress' && lastLiveRoute && Array.isArray(lastLiveRoute.maneuvers)
         ? lastLiveRoute.maneuvers.filter(function (maneuver) {
             return maneuver && maneuver.type !== 'depart' && maneuver.type !== 'arrive' && Number(maneuver.distanceFromStartMeters) >= 20 && Array.isArray(maneuver.location);
           }).slice(0, 4).map(function (maneuver) {
