@@ -3829,6 +3829,72 @@
         color:#fff !important;
         font-weight:850;
       }
+      /* Credenciais de embarque: leitura imediata mesmo com brilho baixo. */
+      #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-credentials {
+        grid-template-columns:1fr 1fr;
+        gap:9px;
+      }
+      #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-credential--plate {
+        min-height:62px;
+        justify-content:center;
+        padding:10px 12px;
+        background:linear-gradient(135deg,#1769ff,#0b4da8) !important;
+        border:2px solid #f7b733 !important;
+      }
+      #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-credential--plate span,
+      #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-credential--plate strong {
+        color:#fff !important;
+      }
+      #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-credential--plate strong {
+        font-size:21px !important;
+        letter-spacing:.08em;
+      }
+      #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-credential--pin {
+        grid-column:1 / -1;
+        min-height:78px;
+        align-items:center;
+        justify-content:center;
+        padding:10px 14px;
+        background:#f7b733 !important;
+        border:2px solid #ffe28a !important;
+        box-shadow:0 5px 16px rgba(247,183,51,.28) !important;
+      }
+      #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-credential--pin span,
+      #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-credential--pin strong,
+      #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-credential--pin small {
+        color:#071321 !important;
+        text-align:center;
+      }
+      #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-credential--pin span {
+        font-size:11px;
+        font-weight:950;
+      }
+      #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-credential--pin strong {
+        font-size:30px !important;
+        line-height:1;
+        letter-spacing:.22em;
+      }
+      #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-credential--pin small {
+        font-size:10px;
+        font-weight:750;
+      }
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity-fact:nth-child(1),
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity-fact:nth-child(2),
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity-fact:nth-child(4) {
+        background:linear-gradient(145deg,#0d5bc2,#1769ff) !important;
+        border-color:#8bb8ff !important;
+      }
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity-fact:nth-child(1) .sarca-extra__identity-fact-label,
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity-fact:nth-child(1) .sarca-extra__identity-fact-value,
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity-fact:nth-child(2) .sarca-extra__identity-fact-label,
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity-fact:nth-child(2) .sarca-extra__identity-fact-value,
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity-fact:nth-child(4) .sarca-extra__identity-fact-label {
+        color:#fff !important;
+      }
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity-fact:nth-child(4) .sarca-extra__identity-fact-value {
+        color:#fff1ad !important;
+        font-size:17px !important;
+      }
     `;
     document.head.appendChild(style);
   }
