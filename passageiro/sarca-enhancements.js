@@ -3007,6 +3007,31 @@
       .sarca-reference__label { display:block; margin-top:8px; font-size:10px; opacity:.76; }
       .sarca-reference__input { width:100%; box-sizing:border-box; margin-top:4px; padding:8px 9px; border:1px solid rgba(255,255,255,.2); border-radius:9px; background:rgba(255,255,255,.08); color:inherit; font:inherit; outline:none; }
       .sarca-reference__input:focus { border-color:#1b5cff; }
+      .sarCa-trip-stop-box { margin-top:9px; padding:9px; border:1px solid rgba(45,125,255,.42); border-radius:11px; background:rgba(45,125,255,.10); }
+      .sarCa-trip-stop-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+      .sarCa-trip-stop-heading span { color:#c8dcff; font-size:10px; }
+      .sarCa-trip-stop-list { display:grid; gap:4px; margin-top:7px; color:#e8f1ff; font-size:11px; line-height:1.3; }
+      .sarCa-trip-stop-price { margin-top:7px; color:#baffdd; font-weight:850; }
+      .sarCa-trip-stop-add { width:100%; min-height:32px; margin-top:8px; border:1px solid rgba(45,125,255,.78); border-radius:9px; background:#1769ff; color:#fff; font:800 11px system-ui,sans-serif; cursor:pointer; }
+      .sarCa-trip-stop-add:disabled { opacity:.55; cursor:not-allowed; }
+      .sarCa-trip-stop-modal { position:fixed; inset:0; z-index:150; display:grid; place-items:center; padding:18px; box-sizing:border-box; background:rgba(2,9,18,.66); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); }
+      .sarCa-trip-stop-dialog { width:min(100%,460px); max-height:min(86vh,620px); overflow:auto; box-sizing:border-box; padding:18px; border:1px solid rgba(45,125,255,.55); border-radius:18px; background:#0b2038; color:#fff; box-shadow:0 18px 55px rgba(0,0,0,.42); }
+      .sarCa-trip-stop-dialog h2 { margin:0; font-size:19px; }
+      .sarCa-trip-stop-help { margin:6px 0 12px; color:#c8dcff; font-size:12px; line-height:1.35; }
+      .sarCa-trip-stop-input { width:100%; min-height:40px; box-sizing:border-box; margin-top:8px; padding:9px 10px; border:1px solid rgba(255,255,255,.22); border-radius:10px; outline:none; background:rgba(255,255,255,.08); color:#fff; font:inherit; }
+      .sarCa-trip-stop-input:focus { border-color:#2d7dff; box-shadow:0 0 0 2px rgba(45,125,255,.18); }
+      .sarCa-trip-stop-results { display:grid; gap:6px; max-height:34vh; overflow:auto; margin-top:9px; }
+      .sarCa-trip-stop-result { display:grid; gap:3px; width:100%; padding:9px 10px; border:1px solid rgba(255,255,255,.14); border-radius:10px; background:rgba(255,255,255,.07); color:#fff; text-align:left; font:inherit; cursor:pointer; }
+      .sarCa-trip-stop-result:hover, .sarCa-trip-stop-result:focus { border-color:#2d7dff; background:rgba(45,125,255,.18); outline:none; }
+      .sarCa-trip-stop-result span, .sarCa-trip-stop-status { color:#c8dcff; font-size:11px; line-height:1.3; }
+      .sarCa-trip-stop-status { padding:8px 2px; }
+      .sarCa-trip-stop-selected { display:grid; gap:4px; padding:9px 10px; border-radius:10px; background:rgba(25,195,125,.14); border:1px solid rgba(25,195,125,.48); }
+      .sarCa-trip-stop-selected span { color:#baffdd; font-size:11px; line-height:1.3; }
+      .sarCa-trip-stop-actions { display:flex; gap:8px; margin-top:13px; }
+      .sarCa-trip-stop-actions button { flex:1; min-height:38px; border-radius:10px; color:#fff; font:800 11px system-ui,sans-serif; cursor:pointer; }
+      .sarCa-trip-stop-cancel { border:1px solid rgba(255,255,255,.22); background:rgba(255,255,255,.09); }
+      .sarCa-trip-stop-submit { border:0; background:#19c37d; color:#071321 !important; }
+      .sarCa-trip-stop-submit:disabled { opacity:.55; cursor:not-allowed; }
       @media (min-width: 700px) { #sarca-weather-card { width: 270px; } }
       /* Keep the map surface stable while the search state changes. The
          Flutter scene owns the map styling; this only removes browser-level
@@ -5088,8 +5113,13 @@
     var driverLat = presenceLatitude(presence);
     var driverLng = presenceLongitude(presence);
     var status = String(trip.status || '');
-    var targetLat = status === 'in_progress' ? tripLatitude(trip, 'dropoff') : tripLatitude(trip, 'pickup');
-    var targetLng = status === 'in_progress' ? tripLongitude(trip, 'dropoff') : tripLongitude(trip, 'pickup');
+    var activeStop = status === 'in_progress' ? activeTripStopTarget(trip, presence) : null;
+    var targetLat = status === 'in_progress'
+      ? (activeStop ? activeStop.latitude : tripLatitude(trip, 'dropoff'))
+      : tripLatitude(trip, 'pickup');
+    var targetLng = status === 'in_progress'
+      ? (activeStop ? activeStop.longitude : tripLongitude(trip, 'dropoff'))
+      : tripLongitude(trip, 'pickup');
     if (driverLat == null || driverLng == null || targetLat == null || targetLng == null) return;
     var driverOffRoute = isDriverOffLiveRoute(driverLat, driverLng);
     if (Date.now() - liveRouteRequestAt < 15000 && !driverOffRoute) return;
@@ -5435,6 +5465,38 @@
 
   function presenceLongitude(presence) {
     return coordinateValue(presence, ['currentLng', 'current_lng', 'longitude', 'driver_longitude']);
+  }
+
+  function tripIntermediateStops(trip) {
+    if (!trip || typeof trip !== 'object') return [];
+    var value = trip.intermediate_stops || trip.intermediateStops ||
+      (trip.pricing_breakdown && (trip.pricing_breakdown.intermediateStops || trip.pricing_breakdown.intermediate_stops));
+    return (Array.isArray(value) ? value : []).filter(function (stop) {
+      return stop && typeof stop === 'object';
+    });
+  }
+
+  function tripStopCoordinate(stop, axis) {
+    return coordinateValue(stop, axis === 'latitude'
+      ? ['latitude', 'lat']
+      : ['longitude', 'lng', 'lon']);
+  }
+
+  function activeTripStopTarget(trip, presence) {
+    var stops = tripIntermediateStops(trip);
+    if (!stops.length) return null;
+    var currentLat = presenceLatitude(presence);
+    var currentLng = presenceLongitude(presence);
+    for (var index = 0; index < stops.length; index += 1) {
+      var stop = stops[index];
+      var latitude = tripStopCoordinate(stop, 'latitude');
+      var longitude = tripStopCoordinate(stop, 'longitude');
+      if (latitude == null || longitude == null) continue;
+      if (currentLat == null || currentLng == null || distanceKmBetween(currentLat, currentLng, latitude, longitude) > 0.08) {
+        return { latitude: latitude, longitude: longitude };
+      }
+    }
+    return null;
   }
 
   function presenceHeading(presence) {
@@ -6178,6 +6240,277 @@
     continueButton.focus();
   }
 
+  function tripStopLabel(stop) {
+    if (!stop || typeof stop !== 'object') return 'Paragem';
+    return String(stop.address || stop.label || stop.name || 'Paragem').trim() || 'Paragem';
+  }
+
+  function tripStopReference(stop) {
+    if (!stop || typeof stop !== 'object') return '';
+    return String(stop.reference || stop.note || '').trim();
+  }
+
+  function tripStopSearchResults(query, signal) {
+    return Promise.all([
+      fetchMapPlaceResults(query, signal).catch(function () { return []; }),
+      fetchMapboxPlaceResults(query, signal).catch(function () { return []; }),
+    ]).then(function (groups) {
+      return rankPlaceSearchResults(groups, normalizePlaceSearchText(query)).slice(0, 10);
+    });
+  }
+
+  async function requestTripStopRoute(trip, stop) {
+    var points = [];
+    var pickupLat = tripLatitude(trip, 'pickup');
+    var pickupLng = tripLongitude(trip, 'pickup');
+    var dropoffLat = tripLatitude(trip, 'dropoff');
+    var dropoffLng = tripLongitude(trip, 'dropoff');
+    if (pickupLat != null && pickupLng != null) points.push([pickupLng, pickupLat]);
+    tripIntermediateStops(trip).forEach(function (item) {
+      var lat = tripStopCoordinate(item, 'latitude');
+      var lng = tripStopCoordinate(item, 'longitude');
+      if (lat != null && lng != null) points.push([lng, lat]);
+    });
+    var stopLat = tripStopCoordinate(stop, 'latitude');
+    var stopLng = tripStopCoordinate(stop, 'longitude');
+    if (stopLat == null || stopLng == null) throw new Error('Escolhe uma paragem com localização válida.');
+    points.push([stopLng, stopLat]);
+    if (dropoffLat != null && dropoffLng != null) points.push([dropoffLng, dropoffLat]);
+    if (points.length < 2) throw new Error('Não foi possível preparar a rota desta viagem.');
+
+    var fallbackDistance = 0;
+    for (var index = 1; index < points.length; index += 1) {
+      fallbackDistance += distanceKmBetween(points[index - 1][1], points[index - 1][0], points[index][1], points[index][0]);
+    }
+    var fallbackDuration = Math.max(60, Math.round((fallbackDistance / 24) * 3600));
+    try {
+      if (!SARCA_MAPBOX_TOKEN || SARCA_MAPBOX_TOKEN.indexOf('__') === 0) throw new Error('Mapbox indisponível');
+      var url = 'https://api.mapbox.com/directions/v5/mapbox/driving/' + points.map(function (point) {
+        return point[0] + ',' + point[1];
+      }).join(';') + '?alternatives=false&geometries=geojson&overview=full&steps=false&language=pt&access_token=' + encodeURIComponent(SARCA_MAPBOX_TOKEN);
+      var response = await fetch(url);
+      var data = await response.json().catch(function () { return {}; });
+      var route = data && Array.isArray(data.routes) ? data.routes[0] : null;
+      var coordinates = route && route.geometry && Array.isArray(route.geometry.coordinates) ? route.geometry.coordinates : [];
+      if (route && coordinates.length >= 2) {
+        return {
+          routePoints: coordinates.map(function (point) { return { longitude: Number(point[0]), latitude: Number(point[1]) }; }),
+          distanceKm: Number(route.distance) / 1000,
+          durationSeconds: Math.max(60, Math.round(Number(route.duration) || fallbackDuration)),
+        };
+      }
+    } catch (_) {}
+    return {
+      routePoints: points.map(function (point) { return { longitude: point[0], latitude: point[1] }; }),
+      distanceKm: fallbackDistance,
+      durationSeconds: fallbackDuration,
+    };
+  }
+
+  async function addPassengerTripStop(trip, stop, reference, modal, submitButton, statusNode) {
+    var actionKey = 'add-stop:' + String(trip && trip.id || '');
+    if (!beginRiderAction(actionKey)) return;
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = 'A recalcular…';
+    }
+    if (statusNode) statusNode.textContent = 'A calcular a nova rota e o novo valor…';
+    try {
+      var authorization = await getAuthenticatedAuthHeader();
+      if (!authorization) throw new Error('Sessão necessária.');
+      var route = await requestTripStopRoute(trip, stop);
+      var idempotencyKey = 'rider-stop:' + String(trip.id) + ':' + Date.now() + ':' + Math.random().toString(36).slice(2, 8);
+      var response = await fetch(SARCA_SUPABASE_URL + '/functions/v1/sarca-progress-trip', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': authorization,
+          'apikey': SARCA_SUPABASE_KEY,
+        },
+        body: JSON.stringify({
+          tripId: trip.id,
+          action: 'add_stop',
+          idempotencyKey: idempotencyKey,
+          stop: {
+            address: tripStopLabel(stop),
+            latitude: tripStopCoordinate(stop, 'latitude'),
+            longitude: tripStopCoordinate(stop, 'longitude'),
+            reference: String(reference || '').trim().slice(0, 240) || null,
+          },
+          routePoints: route.routePoints,
+          durationSeconds: route.durationSeconds,
+        }),
+      });
+      var payload = await response.json().catch(function () { return {}; });
+      if (!response.ok || payload.ok === false) throw new Error(payload.error || payload.message || 'Não foi possível adicionar a paragem.');
+      var currentPayload = lastTripPayload && lastTripPayload.trip && String(lastTripPayload.trip.id) === String(trip.id)
+        ? lastTripPayload
+        : {};
+      var nextPayload = Object.assign({}, currentPayload, payload, { trip: payload.trip || Object.assign({}, trip, { intermediate_stops: payload.change && payload.change.intermediate_stops }) });
+      lastTripPayload = nextPayload;
+      renderTripState(nextPayload);
+      var change = payload.change && typeof payload.change === 'object' ? payload.change : {};
+      var extra = Number(change.extra_amount_minor) / 100;
+      var total = Number(change.total_fare_minor) / 100;
+      if (!isFinite(extra)) extra = 0;
+      if (!isFinite(total) || total <= 0) total = minorOrAmount(payload.trip || trip, 'estimated_fare_minor', 'estimated_fare');
+      queueTripAnnouncement(
+        'trip:' + String(trip.id) + ':stop:' + idempotencyKey,
+        'Paragem adicionada. O valor aumentou ' + money(extra) + '. Total da viagem: ' + money(total) + '.',
+      );
+      showRiderActionToast('Paragem adicionada · +' + money(extra) + ' · Total ' + money(total));
+      if (modal && modal.parentNode) modal.remove();
+      await refreshTripTracking(trip.id);
+    } catch (error) {
+      if (statusNode) statusNode.textContent = error && error.message ? error.message : 'Não foi possível adicionar a paragem.';
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.textContent = 'ADICIONAR PARAGEM';
+      }
+    } finally {
+      endRiderAction(actionKey);
+    }
+  }
+
+  function openAddTripStopModal(trip) {
+    var existing = document.getElementById('sarCa-trip-stop-modal');
+    if (existing) existing.remove();
+    var modal = el('div', 'sarCa-trip-stop-modal');
+    modal.id = 'sarCa-trip-stop-modal';
+    var dialog = el('section', 'sarCa-trip-stop-dialog');
+    dialog.setAttribute('role', 'dialog');
+    dialog.setAttribute('aria-modal', 'true');
+    var title = el('h2', '', 'Adicionar paragem');
+    dialog.appendChild(title);
+    dialog.appendChild(el('p', 'sarCa-trip-stop-help', 'Escolhe um local no caminho. A SARCA recalcula a rota, o acréscimo e o total antes de guardar.'));
+    var input = document.createElement('input');
+    input.className = 'sarCa-trip-stop-input';
+    input.type = 'search';
+    input.placeholder = 'Pesquisar paragem, rua ou estabelecimento';
+    input.autocomplete = 'off';
+    input.setAttribute('aria-label', 'Pesquisar paragem');
+    dialog.appendChild(input);
+    var results = el('div', 'sarCa-trip-stop-results');
+    results.setAttribute('role', 'listbox');
+    results.appendChild(el('div', 'sarCa-trip-stop-status', 'Escreve o nome da paragem para pesquisar.'));
+    dialog.appendChild(results);
+    var reference = document.createElement('input');
+    reference.className = 'sarCa-trip-stop-input';
+    reference.type = 'text';
+    reference.maxLength = 240;
+    reference.placeholder = 'Referência opcional: portão azul, em frente à farmácia';
+    reference.hidden = true;
+    dialog.appendChild(reference);
+    var selected = null;
+    var submit = el('button', 'sarCa-trip-stop-submit', 'ADICIONAR PARAGEM');
+    submit.type = 'button';
+    submit.disabled = true;
+    var cancel = el('button', 'sarCa-trip-stop-cancel', 'CANCELAR');
+    cancel.type = 'button';
+    var actions = el('div', 'sarCa-trip-stop-actions');
+    actions.appendChild(cancel);
+    actions.appendChild(submit);
+    dialog.appendChild(actions);
+    modal.appendChild(dialog);
+    document.body.appendChild(modal);
+    var searchTimer = null;
+    var searchController = null;
+    var searchSequence = 0;
+    function close() {
+      if (searchController) searchController.abort();
+      if (modal.parentNode) modal.remove();
+    }
+    function showResults(items) {
+      results.innerHTML = '';
+      if (!items.length) {
+        results.appendChild(el('div', 'sarCa-trip-stop-status', 'Ainda não encontramos esse local. Continua a escrever ou tenta outra referência.'));
+        return;
+      }
+      items.forEach(function (place) {
+        var item = el('button', 'sarCa-trip-stop-result');
+        item.type = 'button';
+        item.setAttribute('role', 'option');
+        item.appendChild(el('strong', '', String(place.name || place.display_name || 'Local').trim()));
+        item.appendChild(el('span', '', String(place.display_name || place.subtitle || place.locality || 'Moçambique').trim()));
+        item.addEventListener('click', function () {
+          selected = place;
+          input.value = String(place.display_name || place.name || '').trim();
+          input.__sarCaSelectedValue = input.value;
+          reference.hidden = false;
+          submit.disabled = false;
+          results.innerHTML = '';
+          var summary = el('div', 'sarCa-trip-stop-selected');
+          summary.appendChild(el('strong', '', 'Paragem selecionada'));
+          summary.appendChild(el('span', '', input.value));
+          results.appendChild(summary);
+          reference.focus();
+        });
+        results.appendChild(item);
+      });
+    }
+    input.addEventListener('input', function () {
+      selected = null;
+      submit.disabled = true;
+      reference.hidden = true;
+      var query = String(input.value || '').trim();
+      if (searchTimer) clearTimeout(searchTimer);
+      if (searchController) searchController.abort();
+      if (!query) {
+        results.innerHTML = '';
+        results.appendChild(el('div', 'sarCa-trip-stop-status', 'Escreve o nome da paragem para pesquisar.'));
+        return;
+      }
+      var sequence = ++searchSequence;
+      results.innerHTML = '';
+      results.appendChild(el('div', 'sarCa-trip-stop-status', 'A procurar locais…'));
+      searchTimer = window.setTimeout(function () {
+        searchController = new AbortController();
+        tripStopSearchResults(query, searchController.signal).then(function (items) {
+          if (sequence !== searchSequence || !modal.isConnected) return;
+          showResults(items);
+        }).catch(function () {
+          if (sequence !== searchSequence || !modal.isConnected) return;
+          results.innerHTML = '';
+          results.appendChild(el('div', 'sarCa-trip-stop-status', 'Não foi possível pesquisar agora. Tenta novamente.'));
+        });
+      }, 140);
+    });
+    submit.addEventListener('click', function () {
+      if (!selected) return;
+      addPassengerTripStop(trip, selected, reference.value, modal, submit, results.querySelector('.sarCa-trip-stop-status') || results);
+    });
+    cancel.addEventListener('click', close);
+    modal.addEventListener('click', function (event) { if (event.target === modal) close(); });
+    input.focus();
+  }
+
+  function appendTripStopControls(trip, container) {
+    if (!trip || !container || String(trip.status || '') !== 'in_progress') return;
+    var stops = tripIntermediateStops(trip);
+    var box = el('div', 'sarCa-trip-stop-box');
+    var heading = el('div', 'sarCa-trip-stop-heading');
+    heading.appendChild(el('strong', '', 'Paragens da viagem'));
+    heading.appendChild(el('span', '', stops.length ? String(stops.length) + '/5' : 'Opcional'));
+    box.appendChild(heading);
+    if (stops.length) {
+      var list = el('div', 'sarCa-trip-stop-list');
+      stops.forEach(function (stop, index) {
+        list.appendChild(el('div', '', (index + 1) + '. ' + tripStopLabel(stop) + (tripStopReference(stop) ? ' · ' + tripStopReference(stop) : '')));
+      });
+      box.appendChild(list);
+      var breakdown = trip.pricing_breakdown && typeof trip.pricing_breakdown === 'object' ? trip.pricing_breakdown : {};
+      var lastExtra = Number(breakdown.stopExtraTotal);
+      var total = minorOrAmount(trip, 'estimated_fare_minor', 'estimated_fare') || minorOrAmount(trip, 'final_fare_minor', 'final_fare');
+      if (isFinite(lastExtra) && lastExtra > 0) box.appendChild(el('div', 'sarCa-trip-stop-price', '+' + money(lastExtra) + ' · total ' + money(total)));
+    }
+    var button = el('button', 'sarCa-trip-stop-add', '+ ADICIONAR PARAGEM');
+    button.type = 'button';
+    button.addEventListener('click', function () { openAddTripStopModal(trip); });
+    if (stops.length >= 5) button.disabled = true;
+    box.appendChild(button);
+    container.appendChild(box);
+  }
+
   async function cancelTripWhileSearchingConfirmed(tripId, button, messageNode) {
     if (!tripId || !button) return;
     button.disabled = true;
@@ -6627,6 +6960,10 @@
     panel.appendChild(el('div', 'sarca-trip-details__title', 'Detalhes da viagem'));
     appendTripDetailRow(panel, 'Origem', firstTripValue(trip, ['pickup_address', 'pickupAddress'], 'Origem confirmada'));
     appendTripDetailRow(panel, 'Destino', firstTripValue(trip, ['dropoff_address', 'dropoffAddress'], 'Destino confirmado'));
+    var tripStops = tripIntermediateStops(trip);
+    tripStops.forEach(function (stop, stopIndex) {
+      appendTripDetailRow(panel, 'Paragem ' + (stopIndex + 1), tripStopLabel(stop) + (tripStopReference(stop) ? ' · ' + tripStopReference(stop) : ''));
+    });
     appendTripDetailRow(panel, 'Categoria', firstTripValue(trip, ['service_label', 'service_class'], 'Viagem'));
     if (['payment_pending', 'completed'].includes(String(firstTripValue(trip, ['status'], '')))) {
       appendTripDetailRow(panel, 'Pagamento', tripPaymentLabel(firstTripValue(trip, ['payment_method', 'paymentMethod'], '')));
@@ -7012,6 +7349,7 @@
       driverActions.appendChild(detailsButton);
       tripExtraCard.appendChild(driverActions);
       tripExtraCard.appendChild(detailsPanel);
+      appendTripStopControls(trip, tripExtraCard);
     }
     // A completed/payment-pending trip no longer has an assigned-trip action
     // card, but its route, price and driver are still important. Keep the
