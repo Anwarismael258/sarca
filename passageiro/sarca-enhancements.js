@@ -428,6 +428,48 @@
     return normalizeMapHeading(Math.atan2(y, x) * 180 / Math.PI);
   }
 
+  function matchDriverToLiveRoute(activeTrip, assignedDriver) {
+    var routePoints = lastLiveRoute && Array.isArray(lastLiveRoute.points)
+      ? lastLiveRoute.points
+      : (activeTrip && Array.isArray(activeTrip.planned_route)
+        ? activeTrip.planned_route.map(function (point) {
+            return [Number(point.longitude != null ? point.longitude : point.lng), Number(point.latitude != null ? point.latitude : point.lat)];
+          }).filter(function (point) { return isFinite(point[0]) && isFinite(point[1]); })
+        : []);
+    if (routePoints.length < 2 || !assignedDriver) return null;
+    var latitude = Number(assignedDriver.latitude);
+    var longitude = Number(assignedDriver.longitude);
+    if (!isFinite(latitude) || !isFinite(longitude)) return null;
+    var best = null;
+    for (var index = 0; index < routePoints.length - 1; index += 1) {
+      var start = routePoints[index];
+      var end = routePoints[index + 1];
+      var latitudeScale = Math.cos(((Number(start[1]) + Number(end[1])) / 2) * Math.PI / 180);
+      var dx = (Number(end[0]) - Number(start[0])) * latitudeScale;
+      var dy = Number(end[1]) - Number(start[1]);
+      var px = (longitude - Number(start[0])) * latitudeScale;
+      var py = latitude - Number(start[1]);
+      var lengthSquared = dx * dx + dy * dy;
+      var progress = lengthSquared <= 0 ? 0 : Math.max(0, Math.min(1, (px * dx + py * dy) / lengthSquared));
+      var projected = {
+        longitude: Number(start[0]) + (Number(end[0]) - Number(start[0])) * progress,
+        latitude: Number(start[1]) + (Number(end[1]) - Number(start[1])) * progress,
+      };
+      var distanceKm = distanceKmBetween(latitude, longitude, projected.latitude, projected.longitude);
+      if (!best || distanceKm < best.distanceKm) {
+        best = {
+          latitude: projected.latitude,
+          longitude: projected.longitude,
+          heading: bearingBetweenMapPoints(start, end),
+          distanceKm: distanceKm,
+        };
+      }
+    }
+    var accuracy = Number(assignedDriver.accuracyMeters);
+    var snapLimitKm = isFinite(accuracy) ? Math.max(0.05, Math.min(0.15, accuracy / 1000 * 2.5)) : 0.08;
+    return best && best.distanceKm <= snapLimitKm ? best : null;
+  }
+
   function routeBearingNearDriver(activeTrip, assignedDriver) {
     var routePoints = lastLiveRoute && Array.isArray(lastLiveRoute.points)
       ? lastLiveRoute.points
@@ -445,17 +487,31 @@
       var distance = distanceKmBetween(latitude, longitude, Number(point[1]), Number(point[0]));
       if (distance < nearestKm) { nearestKm = distance; nearestIndex = index; }
     });
+    // Use route direction only when the GPS point is actually close to the
+    // route. Never invent a bearing from an unrelated old route.
     if (nearestIndex < 0 || nearestKm > 0.2) return null;
     var start = routePoints[Math.max(0, Math.min(routePoints.length - 2, nearestIndex))];
     var end = routePoints[Math.max(1, Math.min(routePoints.length - 1, nearestIndex + 1))];
     return bearingBetweenMapPoints(start, end);
   }
 
-  function resolveAssignedDriverHeading(activeTrip, assignedDriver) {
+  function resolveAssignedDriverHeading(activeTrip, assignedDriver, roadMatch) {
     var gpsHeading = normalizeMapHeading(assignedDriver && assignedDriver.heading);
     var speed = Number(assignedDriver && assignedDriver.speedKmh);
     var accuracy = Number(assignedDriver && assignedDriver.accuracyMeters);
-    if (gpsHeading != null && isFinite(speed) && speed > 2 && (!isFinite(accuracy) || accuracy <= 50)) return gpsHeading;
+    if (!isFinite(speed) || speed < 2) {
+      return lastAssignedDriverHeading != null
+        ? lastAssignedDriverHeading
+        : (roadMatch && roadMatch.heading != null ? roadMatch.heading : 0);
+    }
+    if (gpsHeading != null && isFinite(speed) && speed > 2 && (!isFinite(accuracy) || accuracy <= 50)) {
+      if (roadMatch && roadMatch.heading != null) {
+        var delta = ((gpsHeading - roadMatch.heading + 540) % 360) - 180;
+        return Math.abs(delta) > 115 ? gpsHeading : roadMatch.heading;
+      }
+      return gpsHeading;
+    }
+    if (roadMatch && roadMatch.heading != null) return roadMatch.heading;
     var routeHeading = routeBearingNearDriver(activeTrip, assignedDriver);
     if (routeHeading != null) return routeHeading;
     return lastAssignedDriverHeading;
@@ -467,8 +523,11 @@
       removeAssignedDriverMarker();
       return;
     }
-    var target = [Number(assignedDriver.longitude), Number(assignedDriver.latitude)];
-    var resolvedHeading = resolveAssignedDriverHeading(activeTrip, assignedDriver);
+    var roadMatch = matchDriverToLiveRoute(activeTrip, assignedDriver);
+    var target = roadMatch
+      ? [Number(roadMatch.longitude), Number(roadMatch.latitude)]
+      : [Number(assignedDriver.longitude), Number(assignedDriver.latitude)];
+    var resolvedHeading = resolveAssignedDriverHeading(activeTrip, assignedDriver, roadMatch);
     var previousHeading = lastAssignedDriverHeading;
     if (resolvedHeading != null) lastAssignedDriverHeading = resolvedHeading;
     var targetHeading = lastAssignedDriverHeading == null ? 0 : lastAssignedDriverHeading;
@@ -3208,7 +3267,8 @@
       .sarCa-assigned-driver-marker span i { display:block; font-style:normal; transform:rotate(45deg); }
       .sarCa-assigned-driver-marker.is-arrived span { animation:sarCa-driver-arrived-pulse 1.15s ease-in-out infinite; background:#16a34a; }
       .sarCa-assigned-driver-marker.is-stale span { filter:grayscale(.72); opacity:.68; }
-      /* Native Mapbox marker: centred on GPS and rotated with the map. */
+      /* Native Mapbox marker: the image is centred on the GPS coordinate and
+         rotates with the map, so it stays aligned to the road after gestures. */
       .sarCa-assigned-driver-marker { width:48px; height:48px; display:grid; place-items:center; transform:none; }
       .sarCa-assigned-driver-marker img { display:block; width:32px; height:32px; object-fit:contain; transform:rotate(var(--sarCa-heading, 0deg)); transform-origin:center; transition:filter .18s ease, opacity .18s ease; }
       .sarCa-assigned-driver-marker.is-arrived img { animation:sarCa-driver-arrived-pulse 1.15s ease-in-out infinite; }
