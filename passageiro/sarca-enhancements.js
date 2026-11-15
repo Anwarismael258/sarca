@@ -3983,16 +3983,26 @@
         font-size:17px;
       }
       #sarca-trip-extra-card.has-driver-details .sarCa-pickup-credential--plate {
+        grid-column:1 / -1;
         background:linear-gradient(135deg,#1769ff,#0b4da8) !important;
         border:2px solid #f7b733 !important;
+        width:100%;
+        box-sizing:border-box;
       }
       #sarca-trip-extra-card.has-driver-details .sarCa-pickup-credential--plate span,
       #sarca-trip-extra-card.has-driver-details .sarCa-pickup-credential--plate strong {
         color:#fff !important;
       }
       #sarca-trip-extra-card.has-driver-details .sarCa-pickup-credential--plate strong {
-        font-size:21px !important;
+        display:block;
+        width:100%;
+        overflow:visible !important;
+        text-overflow:clip !important;
+        white-space:normal !important;
+        overflow-wrap:anywhere;
+        font-size:clamp(16px,6vw,23px) !important;
         letter-spacing:.08em;
+        line-height:1.15;
       }
       #sarca-trip-extra-card.has-driver-details .sarCa-pickup-credential--pin {
         grid-column:1 / -1;
