@@ -699,6 +699,7 @@
     var validPoint = function (point) {
       return point && isFinite(Number(point.latitude)) && isFinite(Number(point.longitude));
     };
+    var searchingForDriver = !!(liveTrip && ['searching_driver', 'offered_to_driver'].includes(String(liveTrip.status || '')));
     var assignedPresence = getAssignedDriverPresence(lastTripPayload);
     var assignedDriver = assignedPresence ? {
       latitude: presenceLatitude(assignedPresence),
@@ -739,7 +740,7 @@
     // attached to the map while it moves. Once one accepts, this collection is
     // cleared and only the assigned driver's marker remains.
     var peopleFeatures = [];
-    syncNearbyDriverMarkers(lastNearbyDrivers, activeTrip);
+    syncNearbyDriverMarkers(lastNearbyDrivers, !searchingForDriver);
     var peopleSource = fullMap.getSource(fullMapPeopleSourceId);
     if (!peopleSource) {
       try {
