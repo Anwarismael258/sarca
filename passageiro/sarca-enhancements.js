@@ -3584,6 +3584,72 @@
       #sarCa-auth-fallback .footer { color:#31527d !important; }
       #sarCa-auth-fallback input,
       #sarCa-auth-fallback .sarCa-moz-phone { background:#f4f8ff !important; border-color:#b8d3ff !important; color:#062252 !important; }
+      /* O dashboard volta ao tema escuro azul, que mantém o contraste no mapa.
+         O pop-up de recolha continua a ser a excepção clara e legível. */
+      #sarca-trip-state-card,
+      #sarca-payment-toll-card,
+      #sarCa-map-dashboard-panel,
+      .sarCa-map-dashboard-profile-sheet,
+      .sarCa-passenger-confirm-dialog,
+      .sarCa-trip-stop-dialog,
+      .sarCa-profile-sheet { background:linear-gradient(145deg,rgba(7,26,49,.97),rgba(8,43,94,.95)) !important; color:#fff !important; border:1px solid rgba(45,125,255,.58) !important; border-top:1px solid rgba(45,125,255,.58) !important; box-shadow:0 10px 28px rgba(0,0,0,.32) !important; backdrop-filter:blur(12px) !important; -webkit-backdrop-filter:blur(12px) !important; }
+      #sarca-trip-extra-card:not(.is-pickup-arrival) { background:rgba(8,20,34,.88) !important; color:#fff !important; border:1px solid rgba(255,255,255,.2) !important; border-top:1px solid rgba(255,255,255,.2) !important; box-shadow:0 6px 20px rgba(0,0,0,.16) !important; backdrop-filter:blur(9px) !important; -webkit-backdrop-filter:blur(9px) !important; }
+      #sarca-trip-state-card .sarca-trip-state__title,
+      #sarca-trip-state-card .sarca-trip-state__top,
+      #sarca-trip-state-card .sarca-trip-state__meta,
+      #sarca-trip-state-card .sarca-trip-state__route-note,
+      #sarca-trip-extra-card:not(.is-pickup-arrival) .sarca-extra__header,
+      #sarca-trip-extra-card:not(.is-pickup-arrival) .sarca-extra__identity strong,
+      #sarca-trip-extra-card:not(.is-pickup-arrival) .sarca-extra__identity-fact-value,
+      #sarca-trip-extra-card:not(.is-pickup-arrival) .sarca-extra__driver-name,
+      #sarca-trip-extra-card:not(.is-pickup-arrival) .sarca-extra__line,
+      #sarca-payment-toll-card strong,
+      #sarca-payment-toll-card label,
+      #sarCa-map-dashboard-panel h2,
+      #sarCa-map-dashboard-panel strong,
+      .sarCa-map-dashboard-profile-sheet strong,
+      .sarCa-passenger-confirm-dialog h2,
+      .sarCa-trip-stop-dialog h2 { color:#fff !important; }
+      #sarca-trip-state-card .sarca-trip-state__meta,
+      #sarca-trip-state-card .sarca-trip-state__route-note,
+      #sarca-trip-extra-card:not(.is-pickup-arrival) .sarca-extra__muted,
+      #sarca-trip-extra-card:not(.is-pickup-arrival) .sarca-extra__identity span,
+      #sarca-payment-toll-card p,
+      #sarCa-map-dashboard-panel p,
+      #sarCa-map-dashboard-panel .sarCa-map-dashboard-section-label,
+      #sarCa-map-dashboard-panel .sarCa-map-dashboard-category-hint,
+      #sarCa-map-dashboard-panel .sarCa-map-dashboard-category-availability,
+      .sarCa-map-dashboard-profile-sheet span,
+      .sarCa-passenger-confirm-dialog p,
+      .sarCa-trip-stop-dialog p { color:#c8dcff !important; }
+      #sarCa-map-dashboard-panel button,
+      .sarCa-map-dashboard-profile-sheet button,
+      .sarCa-passenger-confirm-dialog button,
+      .sarCa-trip-stop-dialog button,
+      #sarca-payment-toll-card button { background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.2); color:#fff; }
+      #sarCa-map-dashboard-panel input,
+      #sarCa-map-dashboard-panel select,
+      .sarCa-map-dashboard-profile-sheet input,
+      .sarCa-map-dashboard-profile-sheet textarea,
+      .sarCa-trip-stop-dialog input,
+      #sarca-payment-toll-card input { background:rgba(255,255,255,.09) !important; border-color:rgba(255,255,255,.2) !important; color:#fff !important; }
+      #sarCa-map-dashboard-panel input::placeholder,
+      .sarCa-map-dashboard-profile-sheet input::placeholder,
+      .sarCa-map-dashboard-profile-sheet textarea::placeholder,
+      .sarCa-trip-stop-dialog input::placeholder { color:rgba(255,255,255,.62) !important; }
+      #sarCa-map-dashboard-panel button.is-active,
+      #sarCa-map-dashboard-panel .sarCa-map-dashboard-route-action,
+      .sarCa-profile-sheet-primary,
+      .sarCa-trip-stop-submit,
+      #sarca-payment-toll-card .sarca-payment-confirm { background:#f7b733 !important; border-color:#f7b733 !important; color:#071321 !important; }
+      #sarCa-auth-fallback { background:linear-gradient(160deg,#06111d,#0b2439) !important; color:#f4f7fb !important; }
+      #sarCa-auth-fallback .card { background:rgba(7,21,34,.98) !important; border:1px solid rgba(45,125,255,.5) !important; border-top:1px solid rgba(45,125,255,.5) !important; box-shadow:0 24px 70px rgba(0,0,0,.42) !important; }
+      #sarCa-auth-fallback .hint,
+      #sarCa-auth-fallback label,
+      #sarCa-auth-fallback .terms,
+      #sarCa-auth-fallback .footer { color:rgba(244,247,251,.74) !important; }
+      #sarCa-auth-fallback input,
+      #sarCa-auth-fallback .sarCa-moz-phone { background:#102b46 !important; border-color:rgba(255,255,255,.18) !important; color:#fff !important; }
     `;
     document.head.appendChild(style);
   }
