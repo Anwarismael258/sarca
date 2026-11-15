@@ -3650,6 +3650,30 @@
       #sarCa-auth-fallback .footer { color:rgba(244,247,251,.74) !important; }
       #sarCa-auth-fallback input,
       #sarCa-auth-fallback .sarCa-moz-phone { background:#102b46 !important; border-color:rgba(255,255,255,.18) !important; color:#fff !important; }
+      /* O Passageiro usa o mesmo fundo escuro azul do Motorista; não deixar
+         o cartão de recolha voltar a introduzir uma superfície branca. */
+      #sarca-trip-extra-card.is-pickup-arrival { background:linear-gradient(145deg,rgba(7,26,49,.97),rgba(8,43,94,.95)) !important; color:#fff !important; border:1px solid rgba(45,125,255,.58) !important; border-top:1px solid rgba(45,125,255,.58) !important; box-shadow:0 10px 28px rgba(0,0,0,.32) !important; backdrop-filter:blur(12px) !important; -webkit-backdrop-filter:blur(12px) !important; }
+      #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-hero,
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity--driver-card,
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity-fact,
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__offer,
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__line,
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-trip-details,
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__receipt { background:rgba(255,255,255,.08) !important; border-color:rgba(45,125,255,.48) !important; color:#fff !important; }
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity-fact--primary,
+      #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-credential--pin { background:rgba(45,125,255,.24) !important; border-color:#2d7dff !important; }
+      #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-hero__title,
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity strong,
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity-fact-value,
+      #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-credential strong,
+      #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-credential--pin strong { color:#fff !important; }
+      #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-hero__text,
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__muted,
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity span,
+      #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-credential span,
+      #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-credential small { color:#c8dcff !important; opacity:1; }
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__actions button,
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__actions a { background:rgba(45,125,255,.2) !important; border-color:rgba(45,125,255,.72) !important; color:#fff !important; }
     `;
     document.head.appendChild(style);
   }
