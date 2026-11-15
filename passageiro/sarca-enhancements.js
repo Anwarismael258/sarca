@@ -3498,6 +3498,92 @@
       .sarCa-rider-location-marker span { background:var(--sarCa-brand-yellow) !important; color:var(--sarCa-brand-ink); }
       .sarCa-profile-sheet-message.is-success { background:rgba(247,183,51,.16); color:#fff1ad; }
       .sarCa-passenger-confirm-actions button.is-danger { background:#b3263b; }
+      /* O cartão de recolha é o padrão visual de todos os cartões e pop-ups:
+         branco para leitura, azul para estrutura e amarelo para confirmação. */
+      #sarca-trip-state-card,
+      #sarca-trip-extra-card,
+      #sarca-payment-toll-card,
+      #sarCa-map-dashboard-panel,
+      .sarCa-map-dashboard-profile-sheet,
+      .sarCa-passenger-confirm-dialog,
+      .sarCa-trip-stop-dialog,
+      .sarCa-profile-sheet { background:#fff !important; color:#062252 !important; border:2px solid #2d7dff !important; border-top:4px solid #f7b733 !important; box-shadow:0 8px 26px rgba(3,37,91,.24) !important; backdrop-filter:none !important; -webkit-backdrop-filter:none !important; }
+      #sarca-trip-state-card.is-searching { background:#fff !important; border-color:#2d7dff !important; }
+      #sarca-trip-state-card .sarca-trip-state__title,
+      #sarca-trip-state-card .sarca-trip-state__top,
+      #sarca-trip-state-card .sarca-trip-state__meta,
+      #sarca-trip-state-card .sarca-trip-state__route-note,
+      #sarca-trip-state-card .sarCa-trip-state__maneuver,
+      #sarca-trip-extra-card .sarca-extra__header,
+      #sarca-trip-extra-card .sarca-extra__identity strong,
+      #sarca-trip-extra-card .sarca-extra__identity-fact-value,
+      #sarca-trip-extra-card .sarca-extra__driver-name,
+      #sarca-trip-extra-card .sarca-extra__line,
+      #sarca-payment-toll-card strong,
+      #sarca-payment-toll-card label,
+      #sarCa-map-dashboard-panel h2,
+      #sarCa-map-dashboard-panel strong,
+      #sarCa-map-dashboard-panel .sarCa-map-dashboard-category-name,
+      .sarCa-map-dashboard-profile-sheet strong,
+      .sarCa-passenger-confirm-dialog h2,
+      .sarCa-trip-stop-dialog h2 { color:#062252 !important; }
+      #sarca-trip-state-card .sarca-trip-state__meta,
+      #sarca-trip-state-card .sarca-trip-state__route-note,
+      #sarca-trip-extra-card .sarca-extra__muted,
+      #sarca-trip-extra-card .sarca-extra__identity span,
+      #sarca-trip-extra-card .sarca-trip-details,
+      #sarca-payment-toll-card p,
+      #sarCa-map-dashboard-panel p,
+      #sarCa-map-dashboard-panel .sarCa-map-dashboard-section-label,
+      #sarCa-map-dashboard-panel .sarCa-map-dashboard-category-hint,
+      #sarCa-map-dashboard-panel .sarCa-map-dashboard-category-availability,
+      .sarCa-map-dashboard-profile-sheet span,
+      .sarCa-passenger-confirm-dialog p,
+      .sarCa-trip-stop-dialog p { color:#31527d !important; }
+      #sarca-trip-state-card .sarCa-trip-state__maneuver { background:#dceaff !important; border-color:#8bb8ff !important; color:#062252 !important; }
+      #sarca-trip-state-card .sarCa-trip-state__maneuver-icon { background:#1769ff !important; color:#fff !important; }
+      #sarca-trip-state-card .sarca-trip-state__progress i { background:#dceaff !important; }
+      #sarca-trip-state-card .sarca-trip-state__distance-progress { background:#dceaff !important; }
+      #sarca-trip-extra-card .sarca-extra__identity--driver-card { background:#f4f8ff !important; border-color:#2d7dff !important; }
+      #sarca-trip-extra-card .sarca-extra__identity-fact { background:#f4f8ff !important; border-color:#c9dcfa !important; }
+      #sarca-trip-extra-card .sarca-extra__identity-fact--primary { background:#dceaff !important; border-color:#8bb8ff !important; }
+      #sarca-trip-extra-card .sarca-extra__identity-fact-label { color:#31527d !important; opacity:1; }
+      #sarca-trip-extra-card .sarca-extra__offer,
+      #sarca-trip-extra-card .sarca-extra__line,
+      #sarca-trip-extra-card .sarca-trip-details,
+      #sarca-trip-extra-card .sarca-extra__receipt { background:#f4f8ff !important; border-color:#c9dcfa !important; }
+      #sarca-trip-extra-card .sarca-extra__actions button,
+      #sarca-trip-extra-card .sarca-extra__actions a,
+      #sarca-payment-toll-card button,
+      #sarCa-map-dashboard-panel button,
+      .sarCa-map-dashboard-profile-sheet button,
+      .sarCa-passenger-confirm-dialog button,
+      .sarCa-trip-stop-dialog button { background:#eef5ff; border-color:#9fc4ff; color:#064fc5; }
+      #sarCa-map-dashboard-panel input,
+      #sarCa-map-dashboard-panel select,
+      .sarCa-map-dashboard-profile-sheet input,
+      .sarCa-map-dashboard-profile-sheet textarea,
+      .sarCa-trip-stop-dialog input,
+      #sarca-payment-toll-card input { background:#f4f8ff !important; border-color:#b8d3ff !important; color:#062252 !important; }
+      #sarCa-map-dashboard-panel input::placeholder,
+      .sarCa-map-dashboard-profile-sheet input::placeholder,
+      .sarCa-map-dashboard-profile-sheet textarea::placeholder,
+      .sarCa-trip-stop-dialog input::placeholder { color:#6e83a5 !important; }
+      #sarCa-map-dashboard-panel button.is-active,
+      #sarCa-map-dashboard-panel .sarCa-map-dashboard-route-action,
+      .sarCa-profile-sheet-primary,
+      .sarCa-trip-stop-submit,
+      #sarca-payment-toll-card .sarca-payment-confirm { background:#f7b733 !important; border-color:#f7b733 !important; color:#071321 !important; }
+      .sarCa-profile-sheet-danger,
+      .sarCa-passenger-confirm-actions button.is-danger { background:#b3263b !important; border-color:#b3263b !important; color:#fff !important; }
+      #sarCa-auth-fallback { background:linear-gradient(160deg,#eef5ff,#fff) !important; color:#062252 !important; }
+      #sarCa-auth-fallback .card { background:#fff !important; border:2px solid #2d7dff !important; border-top:4px solid #f7b733 !important; box-shadow:0 24px 70px rgba(3,37,91,.2) !important; }
+      #sarCa-auth-fallback .hint,
+      #sarCa-auth-fallback label,
+      #sarCa-auth-fallback .terms,
+      #sarCa-auth-fallback .footer { color:#31527d !important; }
+      #sarCa-auth-fallback input,
+      #sarCa-auth-fallback .sarCa-moz-phone { background:#f4f8ff !important; border-color:#b8d3ff !important; color:#062252 !important; }
     `;
     document.head.appendChild(style);
   }
