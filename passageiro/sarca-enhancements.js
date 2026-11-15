@@ -3450,6 +3450,54 @@
       .sarCa-passenger-confirm-actions button { min-height:42px; border:1px solid rgba(45,125,255,.55); border-radius:11px; padding:9px 10px; color:#fff; background:rgba(45,125,255,.2); font:750 12px system-ui,sans-serif; }
       .sarCa-passenger-confirm-actions button.is-danger { border-color:rgba(255,120,120,.78); background:#b3263b; color:#fff; }
       .sarCa-rider-action-toast { position:fixed; left:50%; bottom:max(84px,calc(env(safe-area-inset-bottom) + 76px)); z-index:95; transform:translateX(-50%); max-width:min(88vw,420px); padding:10px 14px; border:1px solid rgba(45,125,255,.5); border-radius:12px; background:rgba(7,26,49,.96); color:#fff; box-shadow:0 10px 28px rgba(0,0,0,.32); font:750 12px/1.25 system-ui,sans-serif; text-align:center; }
+      /* Identidade SARCA aplicada a todas as telas: branco, azul e amarelo.
+         O azul continua a ser a cor de acção; o amarelo marca confirmação,
+         dinheiro e estados positivos, sem reintroduzir o verde antigo. */
+      :root { --sarCa-brand-blue:#1769ff; --sarCa-brand-blue-light:#2d7dff; --sarCa-brand-blue-deep:#071a31; --sarCa-brand-yellow:#f7b733; --sarCa-brand-white:#fff; --sarCa-brand-ink:#071321; }
+      html, body { background:#071a31 !important; color:#fff !important; }
+      #sarCa-auth-fallback h1 span { color:var(--sarCa-brand-yellow) !important; }
+      #sarCa-auth-fallback button { background:var(--sarCa-brand-yellow) !important; color:var(--sarCa-brand-ink) !important; }
+      #sarCa-auth-fallback .terms input { accent-color:var(--sarCa-brand-yellow) !important; }
+      #sarCa-map-dashboard-topbar strong { color:#fff; }
+      #sarCa-map-dashboard-topbar .sarCa-map-dashboard-brand,
+      #sarCa-map-dashboard-topbar.sarCa-map-dashboard-topbar--minimal .sarCa-map-dashboard-brand,
+      #sarCa-map-dashboard-topbar.sarCa-map-dashboard-topbar--minimal .sarCa-map-dashboard-notifications { color:var(--sarCa-brand-blue-light); }
+      #sarCa-map-dashboard-panel,
+      .sarCa-map-dashboard-profile-sheet,
+      .sarCa-passenger-confirm-dialog,
+      .sarCa-rider-action-toast { border-color:rgba(45,125,255,.58); background:linear-gradient(145deg,rgba(7,26,49,.97),rgba(8,43,94,.95)); color:#fff; }
+      #sarCa-map-dashboard-panel .sarCa-map-dashboard-service-choice button.is-active,
+      #sarCa-map-dashboard-panel .sarCa-map-dashboard-category-grid button.is-active,
+      #sarCa-map-dashboard-nav button.is-active { border-color:var(--sarCa-brand-blue-light); background:rgba(45,125,255,.32); color:#fff; }
+      #sarCa-map-dashboard-nav { border-top-color:rgba(45,125,255,.42); background:rgba(7,26,49,.97); }
+      #sarCa-map-dashboard-nav button.is-active { box-shadow:inset 0 3px 0 var(--sarCa-brand-yellow); }
+      #sarCa-map-dashboard-panel .sarCa-map-dashboard-route-action,
+      #sarCa-map-dashboard-panel .sarCa-map-dashboard-location-button,
+      .sarCa-profile-sheet-primary,
+      .sarCa-trip-stop-submit,
+      .sarCa-extra__offer button,
+      .sarCa-extra__primary-action,
+      #sarca-payment-toll-card button.is-selected,
+      #sarca-payment-toll-card .sarca-payment-confirm { background:var(--sarCa-brand-yellow) !important; color:var(--sarCa-brand-ink) !important; border-color:var(--sarCa-brand-yellow) !important; }
+      #sarCa-map-dashboard-panel .sarCa-map-dashboard-route-action,
+      .sarCa-extra__primary-action { box-shadow:0 5px 14px rgba(247,183,51,.22); }
+      #sarCa-map-dashboard-panel .sarCa-map-dashboard-category-price,
+      #sarCa-map-dashboard-panel .sarCa-map-dashboard-category-availability.is-ready,
+      #sarCa-map-dashboard-panel .sarCa-map-dashboard-trip-summary b,
+      #sarCa-map-dashboard-panel .sarCa-map-dashboard-wallet-balance,
+      .sarCa-extra__offer-price,
+      .sarCa-trip-stop-price,
+      #sarca-trip-state-card .sarca-trip-state__pin { color:#fff1ad !important; }
+      #sarca-trip-state-card .sarca-trip-state__progress i.is-done { background:var(--sarCa-brand-yellow) !important; }
+      #sarca-trip-state-card .sarca-trip-state__distance-progress span { background:linear-gradient(90deg,var(--sarCa-brand-blue-light),var(--sarCa-brand-yellow)) !important; }
+      #sarCa-live-map-overlay .sarCa-live-driver { fill:var(--sarCa-brand-yellow); }
+      #sarca-nearby-drivers-card .sarca-nearby__dot { background:var(--sarCa-brand-yellow); box-shadow:0 0 0 3px rgba(247,183,51,.22); }
+      #sarca-location-shortcut .is-success { background:var(--sarCa-brand-yellow) !important; color:var(--sarCa-brand-ink) !important; border-color:var(--sarCa-brand-yellow) !important; }
+      .sarCa-assigned-driver-marker span,
+      .sarCa-assigned-driver-overlay span,
+      .sarCa-rider-location-marker span { background:var(--sarCa-brand-yellow) !important; color:var(--sarCa-brand-ink); }
+      .sarCa-profile-sheet-message.is-success { background:rgba(247,183,51,.16); color:#fff1ad; }
+      .sarCa-passenger-confirm-actions button.is-danger { background:#b3263b; }
     `;
     document.head.appendChild(style);
   }
@@ -3717,7 +3765,7 @@
     var overlay = document.createElement('div');
     overlay.className = 'sarCa-reward-animation';
     overlay.textContent = '+' + String(points) + ' pontos SARCA';
-    overlay.style.cssText = 'position:fixed;z-index:99999;left:50%;top:28%;transform:translate(-50%,-50%);padding:18px 24px;border-radius:18px;background:linear-gradient(135deg,#0b5cff,#21c7a8);color:#fff;font-weight:800;font-size:18px;box-shadow:0 18px 50px #001a4d55;animation:sarcaRewardPop .35s ease-out both;pointer-events:none;';
+    overlay.style.cssText = 'position:fixed;z-index:99999;left:50%;top:28%;transform:translate(-50%,-50%);padding:18px 24px;border-radius:18px;background:linear-gradient(135deg,#1769ff,#f7b733);color:#071321;font-weight:800;font-size:18px;box-shadow:0 18px 50px #001a4d55;animation:sarcaRewardPop .35s ease-out both;pointer-events:none;';
     document.body.appendChild(overlay);
     window.setTimeout(function () { overlay.remove(); }, 3200);
   }
