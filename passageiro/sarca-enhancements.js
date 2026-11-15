@@ -780,9 +780,9 @@
       } : { type: 'FeatureCollection', features: [] });
     }
 
-    // During an in-progress trip, keep an explicit destination marker. The
-    // passenger marker is intentionally removed at this phase, so the only
-    // people marker left on the map is the assigned driver.
+    // During an in-progress trip the map is intentionally minimal: the
+    // assigned driver's car is the only marker. The destination remains in
+    // the route/state, not as a second map pin.
     var destinationSource = fullMap.getSource(fullMapDestinationSourceId);
     if (!destinationSource) {
       try {
@@ -822,7 +822,7 @@
       } catch (_) {}
     }
     var destinationFeature = null;
-    if (activeTrip && String(liveTrip.status || '') === 'in_progress' && destination && validPoint(destination)) {
+    if (activeTrip && String(liveTrip.status || '') !== 'in_progress' && destination && validPoint(destination)) {
       destinationFeature = {
         type: 'Feature',
         properties: { label: 'Destino' },
