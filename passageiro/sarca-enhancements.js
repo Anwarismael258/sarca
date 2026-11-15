@@ -99,6 +99,7 @@
   var assignedDriverMarker = null;
   var assignedDriverAnimationFrame = null;
   var lastAssignedDriverHeading = null;
+  var nearbyDriverMarkers = Object.create(null);
   var assignedDriverOverlay = null;
   var assignedDriverOverlayMoveBound = false;
   var riderLocationMarker = null;
@@ -383,6 +384,54 @@
     if (assignedDriverOverlay && assignedDriverOverlay.parentNode) assignedDriverOverlay.parentNode.removeChild(assignedDriverOverlay);
     assignedDriverOverlay = null;
     assignedDriverOverlayMoveBound = false;
+  }
+
+  function removeNearbyDriverMarkers() {
+    Object.keys(nearbyDriverMarkers).forEach(function (key) {
+      try { nearbyDriverMarkers[key].remove(); } catch (_) {}
+      delete nearbyDriverMarkers[key];
+    });
+  }
+
+  function syncNearbyDriverMarkers(drivers, activeTrip) {
+    if (!fullMap || !window.mapboxgl) return;
+    if (activeTrip) {
+      removeNearbyDriverMarkers();
+      return;
+    }
+    var currentKeys = Object.create(null);
+    (Array.isArray(drivers) ? drivers : []).slice(0, 8).forEach(function (driver, index) {
+      var latitude = Number(driver && (driver.currentLat != null ? driver.currentLat : driver.current_lat));
+      var longitude = Number(driver && (driver.currentLng != null ? driver.currentLng : driver.current_lng));
+      if (!isFinite(latitude) || !isFinite(longitude)) return;
+      var identity = driver && (driver.userId || driver.user_id || driver.driverUserId || driver.driver_user_id || driver.id);
+      var key = String(identity || (latitude.toFixed(6) + ',' + longitude.toFixed(6) + ':' + index));
+      currentKeys[key] = true;
+      var marker = nearbyDriverMarkers[key];
+      if (!marker) {
+        var markerElement = document.createElement('div');
+        markerElement.className = 'sarCa-nearby-driver-marker';
+        markerElement.setAttribute('aria-label', 'Motorista SARCA disponível próximo');
+        var image = document.createElement('img');
+        image.src = mapMarkerAssetBase + 'mini-hatchback-blue-top.png';
+        image.alt = '';
+        image.draggable = false;
+        markerElement.appendChild(image);
+        marker = new window.mapboxgl.Marker({ element: markerElement, anchor: 'center', rotationAlignment: 'map', pitchAlignment: 'map' })
+          .setLngLat([longitude, latitude])
+          .addTo(fullMap);
+        nearbyDriverMarkers[key] = marker;
+      } else {
+        marker.setLngLat([longitude, latitude]);
+      }
+      var heading = normalizeMapHeading(driver && (driver.heading != null ? driver.heading : driver.bearing));
+      if (heading != null && typeof marker.setRotation === 'function') marker.setRotation(heading);
+    });
+    Object.keys(nearbyDriverMarkers).forEach(function (key) {
+      if (currentKeys[key]) return;
+      try { nearbyDriverMarkers[key].remove(); } catch (_) {}
+      delete nearbyDriverMarkers[key];
+    });
   }
 
   function removeRiderLocationMarker() {
@@ -686,20 +735,11 @@
     }
     else removeAssignedDriverMarker();
 
-    // Keep one authoritative GeoJSON layer for actual GPS positions. Pickup
-    // and destination are never represented as people or vehicle positions.
+    // During search, nearby drivers are native Mapbox markers so they remain
+    // attached to the map while it moves. Once one accepts, this collection is
+    // cleared and only the assigned driver's marker remains.
     var peopleFeatures = [];
-    if (!activeTrip) {
-      (Array.isArray(lastNearbyDrivers) ? lastNearbyDrivers : []).slice(0, 8).forEach(function (driver) {
-        var point = { latitude: driver.currentLat, longitude: driver.currentLng };
-        if (!validPoint(point)) return;
-        peopleFeatures.push({
-          type: 'Feature',
-          properties: { kind: 'driver', label: 'Motorista disponível' },
-          geometry: { type: 'Point', coordinates: [Number(point.longitude), Number(point.latitude)] },
-        });
-      });
-    }
+    syncNearbyDriverMarkers(lastNearbyDrivers, activeTrip);
     var peopleSource = fullMap.getSource(fullMapPeopleSourceId);
     if (!peopleSource) {
       try {
@@ -3282,6 +3322,8 @@
       .sarCa-assigned-driver-marker img { display:block; width:32px; height:32px; object-fit:contain; transform:rotate(var(--sarCa-heading, 0deg)); transform-origin:center; transition:filter .18s ease, opacity .18s ease; }
       .sarCa-assigned-driver-marker.is-arrived img { animation:sarCa-driver-arrived-pulse 1.15s ease-in-out infinite; }
       .sarCa-assigned-driver-marker.is-stale img { filter:grayscale(.72); opacity:.68; }
+      .sarCa-nearby-driver-marker { width:34px; height:34px; display:grid; place-items:center; pointer-events:none; filter:drop-shadow(0 2px 4px rgba(0,0,0,.48)); }
+      .sarCa-nearby-driver-marker img { display:block; width:25px; height:25px; object-fit:contain; padding:4px; box-sizing:border-box; border:2px solid #2d7dff; border-radius:50%; background:#071321; filter:brightness(.62) saturate(.45); transition:filter .2s ease, transform .2s ease; }
       .sarCa-passenger-recenter-button { position:fixed; top:max(78px,calc(env(safe-area-inset-top) + 70px)); left:50%; transform:translateX(-50%); z-index:28; border:1px solid rgba(255,255,255,.72); border-radius:999px; padding:9px 15px; background:#1769ff; color:#fff; box-shadow:0 7px 20px rgba(0,0,0,.28); font:800 12px/1 system-ui,sans-serif; cursor:pointer; }
       .sarCa-passenger-recenter-button[hidden] { display:none !important; }
       .sarCa-full-map-ready #sarCa-full-map-surface { display:block; }
@@ -5586,8 +5628,8 @@
   function syncTripTrackingPolling(payload) {
     var trip = payload && payload.trip;
     var status = trip && String(trip.status || '');
-    var active = trip && trip.id && !['completed', 'cancelled', 'cancelled_by_driver', 'no_driver_found', 'payment_pending'].includes(status);
-    if (!active) {
+    var needsDriverTracking = trip && trip.id && ['driver_assigned', 'driver_arriving', 'in_progress'].includes(status);
+    if (!needsDriverTracking) {
       stopTripTrackingPolling();
       if (lastCurrentLocation) startNearbyDriversPolling();
       return;
