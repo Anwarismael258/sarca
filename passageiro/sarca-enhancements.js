@@ -3773,6 +3773,62 @@
       .sarCa-map-dashboard-profile-sheet small,
       .sarCa-profile-sheet-notification-time,
       .sarCa-profile-sheet-terms { color:#c8dcff !important; }
+      /* Dados para encontrar o motorista: destaque forte, sem azul sobre azul. */
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity--driver-card {
+        background:linear-gradient(145deg,#0d5bc2,#071a31) !important;
+        border:1px solid #8bb8ff !important;
+        box-shadow:0 8px 22px rgba(0,12,42,.38) !important;
+      }
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity--driver-card .sarca-extra__identity-copy > strong,
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity--driver-card .sarca-extra__identity-copy > span {
+        color:#fff !important;
+      }
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity-facts { gap:8px; }
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity-fact {
+        min-height:48px;
+        padding:9px 10px;
+        background:rgba(7,26,49,.72) !important;
+        border:1px solid rgba(139,184,255,.7) !important;
+      }
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity-fact-label {
+        color:#c8dcff !important;
+        opacity:1 !important;
+        font-size:10px;
+        font-weight:850;
+      }
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity-fact-value {
+        color:#fff !important;
+        font-size:14px;
+        font-weight:900;
+      }
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity-fact:nth-child(1) .sarca-extra__identity-fact-value,
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity-fact:nth-child(2) .sarca-extra__identity-fact-value {
+        font-size:15px;
+      }
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity-fact:nth-child(3) {
+        background:linear-gradient(135deg,#1769ff,#0b4da8) !important;
+        border-color:#f7b733 !important;
+      }
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity-fact:nth-child(3) .sarca-extra__identity-fact-label,
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity-fact:nth-child(3) .sarca-extra__identity-fact-value {
+        color:#fff !important;
+      }
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity-fact:nth-child(3) .sarca-extra__identity-fact-value {
+        font-size:18px;
+        letter-spacing:.06em;
+      }
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity-fact:nth-child(4) .sarca-extra__identity-fact-value {
+        color:#fff1ad !important;
+        font-size:15px;
+      }
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__actions button,
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__actions a {
+        min-height:38px;
+        background:#1769ff !important;
+        border-color:#8bb8ff !important;
+        color:#fff !important;
+        font-weight:850;
+      }
     `;
     document.head.appendChild(style);
   }
