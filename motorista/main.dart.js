@@ -80220,7 +80220,7 @@ n=o.a.b
 n.toString
 p=s.a(n).al$
 o.a=p}return!1}}
-A.a__SARCA_MAPBOX_TOKEN__={
+A.apk.prototype={
 $2(a,b){return this.a.a.cz(a,b)},
 $S:14}
 A.aLx.prototype={
@@ -95647,7 +95647,7 @@ goK(){return this.y!=null}}
 A.aFy.prototype={
 $2(a,b){return new A.aH(A.aU(a),A.eE(t.j.a(b),!0,t.K),t.qE)},
 $S:560}
-A.__SARCA_MAPBOX_TOKEN__={
+A.pk.prototype={
 j(a){return"NavigationNotification canHandlePop: "+this.a}}
 A.aHd.prototype={
 $2(a,b){if(!a.a)a.K(b)},
