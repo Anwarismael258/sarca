@@ -3674,6 +3674,13 @@
       #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-credential small { color:#c8dcff !important; opacity:1; }
       #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__actions button,
       #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__actions a { background:rgba(45,125,255,.2) !important; border-color:rgba(45,125,255,.72) !important; color:#fff !important; }
+      #sarca-trip-extra-card.is-pickup-arrival { background:linear-gradient(145deg,#0b4da8,#071a31) !important; border-color:#2d7dff !important; }
+      #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-credential,
+      #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-credential--plate { background:rgba(45,125,255,.28) !important; border-color:rgba(139,184,255,.82) !important; }
+      #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-credential--pin { background:#1769ff !important; border-color:#8bb8ff !important; }
+      #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-credential span,
+      #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-credential strong,
+      #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-credential small { color:#fff !important; }
     `;
     document.head.appendChild(style);
   }
