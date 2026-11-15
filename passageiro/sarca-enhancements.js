@@ -3895,6 +3895,80 @@
         color:#fff1ad !important;
         font-size:17px !important;
       }
+      /* O mesmo cartão vivo aparece logo após a atribuição, não apenas quando
+         o motorista chega ao ponto de recolha. */
+      #sarca-trip-extra-card.has-driver-details {
+        background:linear-gradient(145deg,#0b4da8,#071a31) !important;
+        border:1px solid #2d7dff !important;
+        color:#fff !important;
+      }
+      #sarca-trip-extra-card.has-driver-details .sarca-extra__identity--driver-card {
+        background:linear-gradient(145deg,#0d5bc2,#071a31) !important;
+        border:1px solid #8bb8ff !important;
+      }
+      #sarca-trip-extra-card.has-driver-details .sarca-extra__identity-fact {
+        min-height:48px;
+        padding:9px 10px;
+        background:linear-gradient(145deg,#0d5bc2,#1769ff) !important;
+        border:1px solid #8bb8ff !important;
+      }
+      #sarca-trip-extra-card.has-driver-details .sarca-extra__identity-fact-label,
+      #sarca-trip-extra-card.has-driver-details .sarca-extra__identity-fact-value,
+      #sarca-trip-extra-card.has-driver-details .sarca-extra__identity-copy > strong,
+      #sarca-trip-extra-card.has-driver-details .sarca-extra__identity-copy > span {
+        color:#fff !important;
+      }
+      #sarca-trip-extra-card.has-driver-details .sarca-extra__identity-fact-label {
+        font-size:10px;
+        font-weight:850;
+        opacity:1 !important;
+      }
+      #sarca-trip-extra-card.has-driver-details .sarca-extra__identity-fact-value {
+        font-size:15px;
+        font-weight:900;
+      }
+      #sarca-trip-extra-card.has-driver-details .sarca-extra__identity-fact:nth-child(3) {
+        background:linear-gradient(135deg,#1769ff,#0b4da8) !important;
+        border:2px solid #f7b733 !important;
+      }
+      #sarca-trip-extra-card.has-driver-details .sarca-extra__identity-fact:nth-child(3) .sarca-extra__identity-fact-value {
+        font-size:18px;
+        letter-spacing:.06em;
+      }
+      #sarca-trip-extra-card.has-driver-details .sarca-extra__identity-fact:nth-child(4) .sarca-extra__identity-fact-value {
+        color:#fff1ad !important;
+        font-size:17px;
+      }
+      #sarca-trip-extra-card.has-driver-details .sarCa-pickup-credential--plate {
+        background:linear-gradient(135deg,#1769ff,#0b4da8) !important;
+        border:2px solid #f7b733 !important;
+      }
+      #sarca-trip-extra-card.has-driver-details .sarCa-pickup-credential--plate span,
+      #sarca-trip-extra-card.has-driver-details .sarCa-pickup-credential--plate strong {
+        color:#fff !important;
+      }
+      #sarca-trip-extra-card.has-driver-details .sarCa-pickup-credential--plate strong {
+        font-size:21px !important;
+        letter-spacing:.08em;
+      }
+      #sarca-trip-extra-card.has-driver-details .sarCa-pickup-credential--pin {
+        grid-column:1 / -1;
+        min-height:78px;
+        align-items:center;
+        justify-content:center;
+        background:#f7b733 !important;
+        border:2px solid #ffe28a !important;
+      }
+      #sarca-trip-extra-card.has-driver-details .sarCa-pickup-credential--pin span,
+      #sarca-trip-extra-card.has-driver-details .sarCa-pickup-credential--pin strong,
+      #sarca-trip-extra-card.has-driver-details .sarCa-pickup-credential--pin small {
+        color:#071321 !important;
+        text-align:center;
+      }
+      #sarca-trip-extra-card.has-driver-details .sarCa-pickup-credential--pin strong {
+        font-size:30px !important;
+        letter-spacing:.22em;
+      }
     `;
     document.head.appendChild(style);
   }
@@ -7914,6 +7988,7 @@
     }
     tripExtraCard.innerHTML = '';
     tripExtraCard.classList.toggle('is-pickup-arrival', status === 'driver_arriving');
+    tripExtraCard.classList.toggle('has-driver-details', Boolean(details && driverAssigned));
     tripExtraCard.classList.toggle('is-payment-required', paymentChoiceRequired);
     var header = el('div', 'sarca-extra__header');
     header.appendChild(el('span', '', driverAssigned
@@ -7973,7 +8048,6 @@
       }
       addIdentityFact('Contacto', details.phone, false);
       addIdentityFact('Carro', vehicle, true);
-      addIdentityFact('Matrícula', details.plateNumber, true);
       addIdentityFact('Avaliação', ratingLabel, false);
       identityCopy.appendChild(identityFacts);
       identity.appendChild(identityCopy);
