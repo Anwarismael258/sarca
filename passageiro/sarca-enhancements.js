@@ -6790,10 +6790,9 @@
       var total = Number(change.total_fare_minor) / 100;
       if (!isFinite(extra)) extra = 0;
       if (!isFinite(total) || total <= 0) total = minorOrAmount(payload.trip || trip, 'estimated_fare_minor', 'estimated_fare');
-      queueTripAnnouncement(
-        'trip:' + String(trip.id) + ':stop:' + idempotencyKey,
-        'Paragem adicionada. O valor aumentou ' + money(extra) + '. Total da viagem: ' + money(total) + '.',
-      );
+      // Adding a stop is a visual confirmation for the passenger, not a voice
+      // announcement. The driver receives the authoritative notification from
+      // sarca-progress-trip with the new stop, route and amount.
       showRiderActionToast('Paragem adicionada · +' + money(extra) + ' · Total ' + money(total));
       if (modal && modal.parentNode) modal.remove();
       await refreshTripTracking(trip.id);
