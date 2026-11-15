@@ -49822,7 +49822,7 @@ tb(a){var s=0,r=A.o(t.H),q=this,p,o,n
 var $async$tb=A.k(function(b,c){if(b===1)return A.l(c,r)
 for(;;)switch(s){case 0:s=2
 return A.f(q.as.a,$async$tb)
-case 2:p=q.garT().yR(0,new A.a7y()).ll(B.qZ)
+case 2:p=q.garT().yR(0,new A.a7y()).ll(B.r_)
 o=t.H
 s=3
 return A.f(A.hP(A.b([a.$0(),p],t.mo),o),$async$tb)
@@ -51321,7 +51321,7 @@ if(c!=null&&B.c.ae(c).length!==0)n.m(0,"pin",B.c.ae(c))
 if(f!=null&&g!=null)n.m(0,"currentLocation",A.V(["latitude",f,"longitude",g,"accuracyMeters",d,"speedKmh",i,"headingDegrees",e,"recordedAt",h],o,t.X))
 m=A
 s=3
-return A.f(p.e4("sarca-progress-trip",a,n,"POST").iW(B.lZ,new A.aa7()),$async$rh)
+return A.f(p.e4("sarca-progress-trip",a,n,"POST").iW(B.m0,new A.aa7()),$async$rh)
 case 3:q=m.WK(l)
 s=1
 break
@@ -51516,7 +51516,7 @@ A.aa5.prototype={
 $1(a){return A.bz(a,t.N,t.z)},
 $S:62}
 A.aa7.prototype={
-$0(){return A.U(A.oF("O servidor demorou a confirmar a chegada. Verifica a liga\xe7\xe3o e tenta novamente."))},
+$0(){return A.U(A.oF("A confirma\xe7\xe3o est\xe1 a demorar. Verifica a liga\xe7\xe3o e tenta novamente."))},
 $S:151}
 A.aa8.prototype={
 Ai(a){return this.a8N(a)},
@@ -51560,7 +51560,7 @@ BL(a,b){return this.ak8(a,b)},
 ak8(b5,b6){var s=0,r=A.o(t._U),q,p=this,o,n,m,l,k,j,i,h,g,f,e,d,c,b,a,a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,b0,b1,b2,b3,b4
 var $async$BL=A.k(function(b7,b8){if(b7===1)return A.l(b8,r)
 for(;;)switch(s){case 0:s=3
-return A.f(A.a6q(A.cD("https://api.mapbox.com/directions/v5/"+b6+"/"+new A.a2(b5,new A.aa9(),A.Y(b5).i("a2<1,q>")).bj(0,";")+"?alternatives=false&geometries=geojson&overview=full&steps=true&language=pt&access_token="+p.a.c,0,null),null).ll(B.r2),$async$BL)
+return A.f(A.a6q(A.cD("https://api.mapbox.com/directions/v5/"+b6+"/"+new A.a2(b5,new A.aa9(),A.Y(b5).i("a2<1,q>")).bj(0,";")+"?alternatives=false&geometries=geojson&overview=full&steps=true&language=pt&access_token="+p.a.c,0,null),null).ll(B.m0),$async$BL)
 case 3:b3=b8
 b4=b3.b
 if(b4<200||b4>=300)throw A.h(A.cC("Falha ao obter rota no Mapbox ("+b4+")."))
@@ -52306,7 +52306,7 @@ return A.f(A.jc(B.qW,null,o),$async$xJ)
 case 3:if(p.c==null){s=1
 break}p.N(new A.aLs(p))
 s=4
-return A.f(A.jc(B.m0,null,o),$async$xJ)
+return A.f(A.jc(B.m_,null,o),$async$xJ)
 case 4:if(p.c!=null)p.N(new A.aLt(p))
 case 1:return A.m(q,r)}})
 return A.n($async$xJ,r)},
@@ -52458,7 +52458,7 @@ case 7:s=8
 return A.f(A.nH(B.hW),$async$wk)
 case 8:m=n.c
 if(m==null){s=1
-break}m.am(t.Pu).f.pH(A.atf(null,null,null,B.Q,null,B.S,null,A.ab("\ud83d\udcb0 Pagamento confirmado. O valor de "+A.dI(A.Nu(a),a.f)+" j\xe1 foi atualizado na tua carteira.",null,null,null,null,null,null,null),null,B.qY,null,null,null,null,null,null,null,null,null,null))
+break}m.am(t.Pu).f.pH(A.atf(null,null,null,B.Q,null,B.S,null,A.ab("\ud83d\udcb0 Pagamento confirmado. O valor de "+A.dI(A.Nu(a),a.f)+" j\xe1 foi atualizado na tua carteira.",null,null,null,null,null,null,null),null,B.qZ,null,null,null,null,null,null,null,null,null,null))
 p=2
 s=6
 break
@@ -52672,7 +52672,7 @@ return A.f(k.vb(),$async$qb)
 case 3:j=b
 if(j==null||m.c==null){s=1
 break}s=4
-return A.f(m.w.kV(j).iW(B.r2,new A.aCM(j)),$async$qb)
+return A.f(m.w.kV(j).iW(B.m0,new A.aCM(j)),$async$qb)
 case 4:l=b
 s=5
 return A.f(k.nM(l),$async$qb)
@@ -52681,7 +52681,7 @@ m.gCH().fM(l)
 m.pW(l)
 p=6
 s=9
-return A.f(m.i6().ll(B.lZ),$async$qb)
+return A.f(m.i6().ll(B.qX),$async$qb)
 case 9:n.push(8)
 s=7
 break
@@ -53476,7 +53476,7 @@ case 1:return A.m(q,r)}})
 return A.n($async$pW,r)},
 tI(){var s=this.cL
 if(s!=null)s.ag()
-this.cL=A.c1(B.m_,new A.aCU(this))},
+this.cL=A.c1(B.lZ,new A.aCU(this))},
 a_e(){var s={},r=this.bw
 if(r!=null)r.ag()
 s.a=0
@@ -53605,7 +53605,7 @@ return A.n($async$kS,r)},
 of(){var s=0,r=A.o(t.Yi),q,p=2,o=[],n=this,m,l,k,j,i,h
 var $async$of=A.k(function(a,b){if(a===1){o.push(b)
 s=p}for(;;)switch(s){case 0:i=n.bk
-if(i!=null&&isFinite(i.f))if(Math.abs(B.e.cl(new A.cA(Date.now(),0,!1).lm().eO(i.c.lm()).a,1e6))<=30&&i.f<=200){q=i
+if(i!=null&&isFinite(i.f))if(Math.abs(B.e.cl(new A.cA(Date.now(),0,!1).lm().eO(i.c.lm()).a,1e6))<=45&&i.f<=150){q=i
 s=1
 break}p=4
 s=7
@@ -53649,7 +53649,7 @@ case 6:case 1:return A.m(q,r)
 case 2:return A.l(o.at(-1),r)}})
 return A.n($async$of,r)},
 Ym(a){var s=J.u(a).toLowerCase()
-return B.c.n(s,"localiza\xe7\xe3o recente")||B.c.n(s,"localizacao recente")||B.c.n(s,"precis\xe3o aceit\xe1vel")||B.c.n(s,"precisao aceitavel")||B.c.n(s,"servidor demorou a confirmar a chegada")},
+return B.c.n(s,"localiza\xe7\xe3o recente")||B.c.n(s,"localizacao recente")||B.c.n(s,"precis\xe3o aceit\xe1vel")||B.c.n(s,"precisao aceitavel")},
 auh(a){var s=this,r=s.U,q=A.Y(r).i("a2<1,ek>")
 r=A.W(new A.a2(r,new A.aCI(a),q),q.i("ao.E"))
 r.$flags=1
@@ -54598,7 +54598,7 @@ A.aDi.prototype={
 $3(a,b,c){var s,r=null
 A.jc(B.LE,new A.aDg(a),t.H)
 s=A.bM(24)
-return A.fZ(A.fP(B.H,!0,r,new A.yV(new A.ax(0.72,1,t.Y),new A.aDh(),A.bv(r,A.b_(A.b([B.O8,B.ah,A.ab("+"+this.a+" pontos SARCA",r,r,r,r,B.a31,B.bz,r),B.cH,B.a7m],t.p),B.A,r,B.ax),B.l,r,r,new A.bh(r,r,r,s,B.QV,B.PG,B.C),r,r,B.Mm,B.Ml,r,r,r),B.HG,B.m0,r,r,t.HN),B.l,B.y,0,r,r,r,r,r,B.bU),r,r,r)},
+return A.fZ(A.fP(B.H,!0,r,new A.yV(new A.ax(0.72,1,t.Y),new A.aDh(),A.bv(r,A.b_(A.b([B.O8,B.ah,A.ab("+"+this.a+" pontos SARCA",r,r,r,r,B.a31,B.bz,r),B.cH,B.a7m],t.p),B.A,r,B.ax),B.l,r,r,new A.bh(r,r,r,s,B.QV,B.PG,B.C),r,r,B.Mm,B.Ml,r,r,r),B.HG,B.m_,r,r,t.HN),B.l,B.y,0,r,r,r,r,r,B.bU),r,r,r)},
 $C:"$3",
 $R:3,
 $S:415}
@@ -54690,7 +54690,7 @@ l.p3=null
 l.to=B.ic
 q=10
 s=13
-return A.f(l.i6().ll(B.lZ),$async$$0)
+return A.f(l.i6().ll(B.qX),$async$$0)
 case 13:o.push(12)
 s=11
 break
@@ -55340,7 +55340,7 @@ var $async$$0=A.k(function(a,b){if(a===1)return A.l(b,r)
 for(;;)switch(s){case 0:o=p.a,n=t.H,m=0
 case 3:if(!(m<20)){s=5
 break}s=6
-return A.f(A.jc(B.qY,null,n),$async$$0)
+return A.f(A.jc(B.qZ,null,n),$async$$0)
 case 6:if(o.c==null||o.x1==null){s=1
 break}s=7
 return A.f(o.kT(),$async$$0)
@@ -55359,7 +55359,7 @@ n.toString
 p=q.a
 m=p
 s=2
-return A.f(p.x.rv(n,q.c,o.b,q.d).iW(B.r0,new A.aBU()),$async$$0)
+return A.f(p.x.rv(n,q.c,o.b,q.d).iW(B.r1,new A.aBU()),$async$$0)
 case 2:m.rx=b
 s=3
 return A.f(p.ob("A guardar foto",!1),$async$$0)
@@ -55382,7 +55382,7 @@ o=q.e
 l=p.ai
 k=o
 s=2
-return A.f(p.y.vz(m,o,q.c,n.b,q.d).iW(B.r0,new A.aDD()),$async$$0)
+return A.f(p.y.vz(m,o,q.c,n.b,q.d).iW(B.r1,new A.aDD()),$async$$0)
 case 2:l.m(0,k,b)
 s=3
 return A.f(p.ob("A guardar documento",!1),$async$$0)
@@ -55763,7 +55763,7 @@ return new A.Jj(A.b83(s,s),B.dV,s,s)}}
 A.Jj.prototype={
 an(){var s,r=this
 r.aO()
-s=A.bm(null,B.m0,null,null,r)
+s=A.bm(null,B.m_,null,null,r)
 s.bp()
 s.cv$.A(0,r.gar5())
 r.e!==$&&A.aL()
@@ -59014,11 +59014,11 @@ else{r=o.a.x
 r===$&&A.a()
 s=r>0.5}if(s){r=o.a
 r.z=B.aP
-r.j1(1,B.ko,B.m_)}else{if(n)o.b.e8()
+r.j1(1,B.ko,B.lZ)}else{if(n)o.b.e8()
 r=o.a
 q=r.r
 if(q!=null&&q.a!=null){r.z=B.kA
-r.j1(0,B.ko,B.m_)}}q=r.r
+r.j1(0,B.ko,B.lZ)}}q=r.r
 if(q!=null&&q.a!=null){p=A.c2()
 p.b=new A.azj(o,p)
 q=p.aZ()
@@ -66344,7 +66344,7 @@ p=t.Y
 k=$.b1g()
 j=p.i("cE<af.T>")
 h.ay=new A.ak(m.a(n),new A.cE(k,new A.ax(s*0.3,s+5,p),j),j.i("ak<af.T>"))
-q=A.bm(i,B.r_,i,i,q)
+q=A.bm(i,B.r0,i,i,q)
 q.bp()
 q.cv$.A(0,o)
 q.bp()
@@ -66369,7 +66369,7 @@ s.c4()
 s=this.db
 s===$&&A.a()
 s.z=B.aP
-s.j1(1,B.V,B.r_)},
+s.j1(1,B.V,B.r0)},
 ag(){var s,r=this,q=r.cx
 q===$&&A.a()
 q.ck()
@@ -68780,10 +68780,10 @@ i=q.gb3()
 m=k.a=l.e
 p=l.d
 if(p!=null&&r!==p.b){if(m!=null&&m.b!=null)m.ag()
-k.a=A.c1(B.r1,new A.aKR(l))}l.N(new A.aKS(k,l,new A.i(q.a,r),new A.i(n-i.a,s-r)))},
+k.a=A.c1(B.r2,new A.aKR(l))}l.N(new A.aKS(k,l,new A.i(q.a,r),new A.i(n-i.a,s-r)))},
 J(a){var s,r=this.d,q=r.b
 r=r.a
-s=this.e!=null?B.r1:B.M
+s=this.e!=null?B.r2:B.M
 return A.aTZ(new A.Sr(this.f,null),B.V,s,r,q)}}
 A.aKR.prototype={
 $0(){var s=this.a
@@ -69922,7 +69922,7 @@ ah(){return new A.a_X(null,null)}}
 A.a_X.prototype={
 an(){var s,r=this
 r.aO()
-s=A.bm(null,B.qX,null,null,r)
+s=A.bm(null,B.qY,null,null,r)
 r.d!==$&&A.aL()
 r.d=s
 r.xM()},
@@ -111065,7 +111065,7 @@ for(;;)switch(s){case 0:o={}
 n=e.a
 o.a=0
 s=3
-return A.f(new A.UP(B.H,0.25,B.qZ,f+1).aJJ(new A.acX(o,p,a,b,n,new A.acZ(a,b,n,c,d)),new A.acY(g),t.kj),$async$C7)
+return A.f(new A.UP(B.H,0.25,B.r_,f+1).aJJ(new A.acX(o,p,a,b,n,new A.acZ(a,b,n,c,d)),new A.acY(g),t.kj),$async$C7)
 case 3:q=p.wV(i,e)
 s=1
 break
@@ -116172,11 +116172,11 @@ B.lY=new A.aG(125e3)
 B.Lt=new A.aG(14e4)
 B.Lu=new A.aG(15e3)
 B.Lv=new A.aG(15e5)
-B.lZ=new A.aG(15e6)
+B.qX=new A.aG(15e6)
 B.Lw=new A.aG(16667)
 B.cT=new A.aG(167e3)
 B.Lx=new A.aG(18e4)
-B.qX=new A.aG(18e5)
+B.qY=new A.aG(18e5)
 B.Ly=new A.aG(195e3)
 B.Lz=new A.aG(2e4)
 B.H=new A.aG(2e5)
@@ -116189,23 +116189,23 @@ B.LD=new A.aG(25e6)
 B.LE=new A.aG(26e5)
 B.LF=new A.aG(2961926e3)
 B.cy=new A.aG(3e5)
-B.qY=new A.aG(3e6)
-B.qZ=new A.aG(3e7)
-B.m_=new A.aG(35e4)
+B.qZ=new A.aG(3e6)
+B.r_=new A.aG(3e7)
+B.lZ=new A.aG(35e4)
 B.LG=new A.aG(36e4)
-B.r_=new A.aG(375e3)
+B.r0=new A.aG(375e3)
 B.LH=new A.aG(4e4)
 B.dL=new A.aG(4e6)
 B.LI=new A.aG(45e3)
 B.LJ=new A.aG(45e4)
-B.r0=new A.aG(45e6)
+B.r1=new A.aG(45e6)
 B.dM=new A.aG(5e4)
 B.eD=new A.aG(5e5)
 B.LK=new A.aG(5e6)
 B.h1=new A.aG(6e5)
-B.m0=new A.aG(65e4)
-B.r1=new A.aG(7e4)
-B.r2=new A.aG(8e6)
+B.m_=new A.aG(65e4)
+B.r2=new A.aG(7e4)
+B.m0=new A.aG(8e6)
 B.LL=new A.aG(9e6)
 B.LM=new A.aG(-38e3)
 B.LN=new A.abc(0,"tonalSpot")
@@ -117020,7 +117020,7 @@ B.eW=new A.tm(1,"deniedForever")
 B.n3=new A.tm(2,"whileInUse")
 B.SP=new A.tm(3,"always")
 B.SQ=new A.tn(B.n2,3,null)
-B.SR=new A.tn(B.n2,0,B.qX)
+B.SR=new A.tn(B.n2,0,B.qY)
 B.o=new A.Ee(0,"ignored")
 B.bk=new A.j(4294967304)
 B.hg=new A.j(4294967323)
@@ -119710,7 +119710,7 @@ r($,"b4H","aSX",()=>{var q=new A.a7J(A.v(t.N,A.av("b1<eS>")))
 q.pS($.aSW())
 return q})
 r($,"b7j","aT6",()=>new A.aeW())
-s($,"bji","aOJ",()=>{var q=A.a9X("","","https://tpmsgvkdjzoidvyiwwfk.supabase.co"),p=A.a9X("","","sb_publishable_VPBqfA_NVrvTs3fRqA49iw_NdOhXRTC"),o=A.a9X("","","__SARCA_MAPBOX_TOKEN__")
+s($,"bji","aOJ",()=>{var q=A.a9X("","","https://tpmsgvkdjzoidvyiwwfk.supabase.co"),p=A.a9X("","","sb_publishable_VPBqfA_NVrvTs3fRqA49iw_NdOhXRTC"),o=A.a9X("","","__SARCA_MAPBOX_TOKEN__.V1zvHsRHVu9QARWQeOvjUA")
 A.a9X("","","SARCA")
 B.c.ga8(B.c.ae(""))
 return new A.a9W(q,p,o)})

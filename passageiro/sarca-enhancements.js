@@ -67,6 +67,10 @@
   var voiceTimer = null;
   var voicePending = null;
   var voiceLastEvent = null;
+  // Keep the last authoritative trip state in this page session. A restored
+  // payment_pending snapshot must not sound like a completed ride when the
+  // passenger has only opened or refreshed the app.
+  var riderTripVoiceStatus = Object.create(null);
   var voiceAudio = null;
   var voiceAssetBase = 'assets/sarCa/voice/';
   var nearbyDriversCard = null;
@@ -1873,6 +1877,7 @@
       'SARCA_TRIP_STARTED',
       'SARCA_TRIP_COMPLETED',
       'SARCA_TRIP_CANCELLED',
+      'SARCA_TRIP_STOP_CONFIRMED',
     ].indexOf(type) !== -1;
   }
 
@@ -2953,6 +2958,37 @@
       }
       #sarca-trip-extra-card.is-visible { display:block; }
       #sarca-trip-extra-card.is-payment-required { border-color:rgba(25,195,125,.72); box-shadow:0 0 0 2px rgba(25,195,125,.14), 0 8px 24px rgba(0,0,0,.22); }
+      /* Pickup is a high-attention state: SARCA white/blue, readable in
+         seconds without hiding the map. */
+      #sarca-trip-extra-card.is-pickup-arrival {
+        background:rgba(255,255,255,.97);
+        color:#062252;
+        border:2px solid #2d7dff;
+        box-shadow:0 8px 26px rgba(3,37,91,.24);
+      }
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__muted { color:#31527d; opacity:1; }
+      #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-hero { border-color:#b8d3ff; background:#edf5ff; }
+      #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-hero__title { color:#064fc5; }
+      #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-hero__text { color:#193a68; }
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity--driver-card { background:#f4f8ff; border-color:#2d7dff; box-shadow:0 5px 16px rgba(10,58,128,.12); }
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity strong { color:#062252; }
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity span { color:#31527d; opacity:1; }
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity-fact { background:#f4f8ff; border-color:#c9dcfa; }
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity-fact--primary { background:#dceaff; border-color:#8bb8ff; }
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity-fact-label { color:#31527d; opacity:1; }
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__identity-fact-value { color:#062252; }
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__actions button { background:#eef5ff; border-color:#9fc4ff; color:#064fc5; }
+      #sarca-trip-extra-card.is-pickup-arrival .sarca-extra__actions button:disabled { color:#6e83a5; background:#f1f4f8; }
+      .sarCa-pickup-hero { display:flex; flex-direction:column; gap:3px; margin-top:8px; padding:9px 10px; border:1px solid rgba(45,125,255,.5); border-radius:11px; background:rgba(45,125,255,.14); }
+      .sarCa-pickup-hero__title { font-size:17px; line-height:1.15; font-weight:900; }
+      .sarCa-pickup-hero__text { font-size:11px; line-height:1.3; }
+      .sarCa-pickup-credentials { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; margin-top:8px; }
+      .sarCa-pickup-credential { display:flex; flex-direction:column; gap:2px; min-width:0; padding:8px 9px; border-radius:10px; border:1px solid #b8d3ff; background:#f4f8ff; }
+      .sarCa-pickup-credential span { color:#31527d; font-size:9px; font-weight:750; text-transform:uppercase; letter-spacing:.06em; }
+      .sarCa-pickup-credential strong { color:#062252; font-size:18px; line-height:1.1; letter-spacing:.05em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      .sarCa-pickup-credential--pin { border-color:#2d7dff; background:#dceaff; }
+      .sarCa-pickup-credential--pin strong { color:#064fc5; font-size:23px; letter-spacing:.18em; }
+      .sarCa-pickup-credential small { color:#31527d; font-size:9px; line-height:1.2; }
       body.sarCa-payment-settled-flash #sarca-trip-extra-card { animation:sarCa-payment-settled .9s ease-out; }
       @keyframes sarCa-payment-settled { 0% { transform:scale(1); box-shadow:0 0 0 0 rgba(25,195,125,.7); } 35% { transform:scale(1.015); box-shadow:0 0 0 8px rgba(25,195,125,.18); } 100% { transform:scale(1); box-shadow:0 0 0 0 rgba(25,195,125,0); } }
       .sarca-extra__header { display:flex; justify-content:space-between; align-items:center; gap:8px; font-weight:750; }
@@ -4685,6 +4721,9 @@
     var rawStatus = String(trip.status || '');
     var status = rawStatus;
     if (status === 'driver_assigned' && ['moving', 'en_route', 'heading_to_pickup'].includes(String(trip.driver_progress_state || trip.driverProgressState || '').toLowerCase())) status = 'driver_arriving';
+    var tripVoiceId = String(trip.id);
+    var previousVoiceStatus = riderTripVoiceStatus[tripVoiceId] || null;
+    riderTripVoiceStatus[tripVoiceId] = status;
     var suffix = wait && wait.state === 'active' ? ':wait_active' : wait && wait.state === 'paused' ? ':wait_paused' : '';
     var driverNear = driverIsActuallyNearPickup(payload, trip);
     // Preserve the acceptance announcement even if the first authoritative
@@ -4695,6 +4734,10 @@
     // once, not once before and once after the payment is settled.
     var voiceKeyStatus = voiceStatus === 'payment_pending' ? 'completed' : voiceStatus;
     var key = String(trip.id) + ':' + voiceKeyStatus + suffix + (driverNear ? ':near' : '');
+    var terminalTransition = (voiceStatus === 'payment_pending' || voiceStatus === 'completed') &&
+      previousVoiceStatus != null &&
+      previousVoiceStatus !== 'payment_pending' &&
+      previousVoiceStatus !== 'completed';
     var text = null;
     if (voiceStatus === 'searching_driver' || voiceStatus === 'offered_to_driver') text = 'A procurar um motorista para si.';
     else if (voiceStatus === 'driver_assigned') text = 'Motorista encontrado! Veja os detalhes da sua viagem.';
@@ -4702,7 +4745,10 @@
     else if (voiceStatus === 'driver_arriving' && driverNear) text = 'O seu motorista está quase a chegar. Prepare-se.';
     else if (voiceStatus === 'driver_arriving') text = 'O seu motorista está a caminho.';
     else if (voiceStatus === 'in_progress') text = 'Bem-vindo à SARCA. A viagem começou. Por motivos de segurança, registamos o percurso desta viagem. Viaje com confiança.';
-    else if (voiceStatus === 'payment_pending' || voiceStatus === 'completed') text = 'Chegámos ao seu destino. Obrigado por viajar com a SARCA!';
+    // Completion is announced by the authoritative completed event (or by a
+    // real transition observed in this session), never by an initial restored
+    // payment card. This prevents the false "obrigado por viajar" on login.
+    else if ((voiceStatus === 'payment_pending' || voiceStatus === 'completed') && terminalTransition) text = 'Chegámos ao seu destino. Obrigado por viajar com a SARCA!';
     else if (voiceStatus === 'cancelled_by_driver') text = 'O motorista cancelou. Vamos procurar outro para si.';
     if (text) queueTripAnnouncement(key, text);
   }
@@ -7257,15 +7303,29 @@
       return;
     }
     tripExtraCard.innerHTML = '';
+    tripExtraCard.classList.toggle('is-pickup-arrival', status === 'driver_arriving');
     tripExtraCard.classList.toggle('is-payment-required', paymentChoiceRequired);
     var header = el('div', 'sarca-extra__header');
-    header.appendChild(el('span', '', driverAssigned ? 'Motorista e viagem' : (showReceipt ? 'A fechar a viagem' : 'Avaliar viagem')));
+    header.appendChild(el('span', '', driverAssigned
+      ? (status === 'driver_arriving' ? 'Recolha SARCA' : 'Motorista e viagem')
+      : (showReceipt ? 'A fechar a viagem' : 'Avaliar viagem')));
     header.appendChild(el('span', 'sarca-extra__muted', navigator.onLine === false ? 'Sem internet' : 'Ligado'));
     tripExtraCard.appendChild(header);
     var boardingPin = payload.boardingPin || payload.boarding_pin || null;
     var boardingCode = boardingPin && (boardingPin.code || boardingPin.pin || boardingPin.value);
-    if (driverAssigned && status === 'driver_arriving' && boardingCode && !(boardingPin.usedAt || boardingPin.used_at)) {
-      tripExtraCard.appendChild(el('div', 'sarca-extra__notice', 'PIN de embarque: ' + String(boardingCode) + ' · diga estes 4 dígitos ao motorista para iniciar a viagem.'));
+    if (driverAssigned) {
+      var progressState = String(trip.driver_progress_state || trip.driverProgressState || '').toLowerCase();
+      var pickupStatus = status === 'driver_arriving'
+        ? 'O motorista chegou'
+        : (['moving', 'en_route', 'heading_to_pickup'].indexOf(progressState) !== -1
+          ? 'Motorista a caminho'
+          : 'Motorista encontrado');
+      var pickupHero = el('div', 'sarCa-pickup-hero');
+      pickupHero.appendChild(el('strong', 'sarCa-pickup-hero__title', pickupStatus));
+      pickupHero.appendChild(el('span', 'sarCa-pickup-hero__text', status === 'driver_arriving'
+        ? 'Confirma a matrícula antes de entrar. Diz o PIN ao motorista para iniciar.'
+        : 'Acompanha o carro no mapa e prepara-te para a recolha.'));
+      tripExtraCard.appendChild(pickupHero);
     }
     if (details) {
       var identity = el('div', 'sarca-extra__identity sarca-extra__identity--driver-card');
@@ -7311,15 +7371,31 @@
     } else if (driverAssigned) {
       tripExtraCard.appendChild(el('div', 'sarca-extra__line', 'Os dados do motorista estão a sincronizar. O contacto só aparece quando for confirmado pela SARCA.'));
     }
+    if (driverAssigned && (details || boardingCode)) {
+      var pickupCredentials = el('div', 'sarCa-pickup-credentials');
+      var plateCredential = el('div', 'sarCa-pickup-credential sarCa-pickup-credential--plate');
+      plateCredential.appendChild(el('span', '', 'Matrícula'));
+      plateCredential.appendChild(el('strong', '', details && details.plateNumber ? String(details.plateNumber) : 'A sincronizar'));
+      pickupCredentials.appendChild(plateCredential);
+      if (boardingCode && !(boardingPin.usedAt || boardingPin.used_at)) {
+        var pinCredential = el('div', 'sarCa-pickup-credential sarCa-pickup-credential--pin');
+        pinCredential.appendChild(el('span', '', 'PIN de embarque'));
+        pinCredential.appendChild(el('strong', '', String(boardingCode)));
+        pinCredential.appendChild(el('small', '', 'Diz estes 4 dígitos ao motorista'));
+        pickupCredentials.appendChild(pinCredential);
+      }
+      tripExtraCard.appendChild(pickupCredentials);
+    }
     if (driverAssigned) {
       var driverActions = el('div', 'sarca-extra__actions');
-      if (details && details.phone) {
-        var call = document.createElement('button');
-        call.type = 'button';
-        call.textContent = 'Ligar';
-        call.addEventListener('click', function () { openRiderCallOptions(details.phone); });
-        driverActions.appendChild(call);
-      }
+      var call = document.createElement('button');
+      call.type = 'button';
+      call.textContent = 'Ligar';
+      call.disabled = !(details && details.phone);
+      call.addEventListener('click', function () {
+        if (details && details.phone) openRiderCallOptions(details.phone);
+      });
+      driverActions.appendChild(call);
       var message = document.createElement('button');
       message.type = 'button';
       var unreadTripMessages = riderUnreadTripMessages(trip.id);
