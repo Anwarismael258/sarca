@@ -3681,6 +3681,98 @@
       #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-credential span,
       #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-credential strong,
       #sarca-trip-extra-card.is-pickup-arrival .sarCa-pickup-credential small { color:#fff !important; }
+      /* Limpeza final dos pop-outs: nenhuma superfície de diálogo deve voltar
+         ao branco através de estilos antigos ou de conteúdo criado depois. */
+      #sarca-trip-state-card,
+      #sarca-trip-extra-card,
+      #sarca-payment-toll-card,
+      #sarCa-map-dashboard-panel,
+      .sarCa-map-dashboard-profile-sheet,
+      .sarCa-passenger-confirm-dialog,
+      .sarCa-trip-stop-dialog,
+      .sarCa-profile-sheet,
+      .sarCa-rider-action-toast,
+      #sarca-current-location-status {
+        background:linear-gradient(145deg,#0b4da8,#071a31) !important;
+        color:#fff !important;
+        border-color:rgba(139,184,255,.78) !important;
+        box-shadow:0 12px 32px rgba(0,12,42,.42) !important;
+      }
+      #sarca-trip-state-card.is-searching,
+      #sarca-trip-extra-card:not(.is-pickup-arrival),
+      #sarca-payment-toll-card,
+      #sarCa-map-dashboard-panel,
+      .sarCa-map-dashboard-profile-sheet,
+      .sarCa-trip-stop-dialog,
+      .sarCa-profile-sheet,
+      .sarCa-rider-action-toast {
+        background:linear-gradient(145deg,rgba(7,26,49,.98),rgba(8,43,94,.96)) !important;
+      }
+      #sarca-trip-state-card .sarCa-trip-state__maneuver,
+      #sarca-trip-extra-card .sarca-extra__identity--driver-card,
+      #sarca-trip-extra-card .sarca-extra__identity-fact,
+      #sarca-trip-extra-card .sarca-extra__offer,
+      #sarca-trip-extra-card .sarca-extra__line,
+      #sarca-trip-extra-card .sarca-trip-details,
+      #sarca-trip-extra-card .sarca-extra__receipt,
+      #sarca-trip-extra-card .sarCa-pickup-hero,
+      #sarca-payment-toll-card input,
+      #sarCa-map-dashboard-panel input,
+      #sarCa-map-dashboard-panel select,
+      .sarCa-map-dashboard-profile-sheet input,
+      .sarCa-map-dashboard-profile-sheet textarea,
+      .sarCa-trip-stop-dialog input,
+      .sarCa-trip-stop-dialog .sarCa-trip-stop-result,
+      .sarCa-profile-sheet-message,
+      .sarCa-profile-sheet-notification,
+      .sarCa-profile-sheet-close {
+        background:rgba(45,125,255,.18) !important;
+        color:#fff !important;
+        border-color:rgba(139,184,255,.62) !important;
+      }
+      #sarca-trip-extra-card .sarCa-pickup-credential,
+      #sarca-trip-extra-card .sarCa-pickup-credential--plate,
+      #sarca-trip-extra-card .sarCa-pickup-credential--pin,
+      #sarca-trip-extra-card .sarca-extra__identity-fact--primary {
+        background:rgba(45,125,255,.28) !important;
+        color:#fff !important;
+        border-color:rgba(139,184,255,.82) !important;
+      }
+      #sarca-trip-state-card *,
+      #sarca-trip-extra-card *,
+      #sarca-payment-toll-card *,
+      #sarCa-map-dashboard-panel *,
+      .sarCa-map-dashboard-profile-sheet *,
+      .sarCa-passenger-confirm-dialog *,
+      .sarCa-trip-stop-dialog *,
+      .sarCa-profile-sheet *,
+      .sarCa-rider-action-toast * { text-shadow:none; }
+      #sarca-trip-state-card .sarca-trip-state__title,
+      #sarca-trip-state-card .sarca-trip-state__meta,
+      #sarca-trip-state-card .sarca-trip-state__route-note,
+      #sarca-trip-extra-card .sarCa-pickup-hero__title,
+      #sarca-trip-extra-card .sarca-extra__identity strong,
+      #sarca-trip-extra-card .sarca-extra__identity span,
+      #sarca-trip-extra-card .sarca-extra__identity-fact-label,
+      #sarca-trip-extra-card .sarca-extra__identity-fact-value,
+      #sarca-trip-extra-card .sarca-extra__muted,
+      #sarca-trip-extra-card .sarca-extra__line,
+      #sarCa-map-dashboard-panel h2,
+      #sarCa-map-dashboard-panel strong,
+      .sarCa-map-dashboard-profile-sheet strong,
+      .sarCa-map-dashboard-profile-sheet span,
+      .sarCa-passenger-confirm-dialog h2,
+      .sarCa-passenger-confirm-dialog p,
+      .sarCa-trip-stop-dialog h2,
+      .sarCa-trip-stop-dialog p,
+      .sarCa-profile-sheet strong,
+      .sarCa-profile-sheet span { color:#fff !important; }
+      #sarca-trip-extra-card .sarCa-pickup-hero__text,
+      #sarca-payment-toll-card p,
+      #sarCa-map-dashboard-panel p,
+      .sarCa-map-dashboard-profile-sheet small,
+      .sarCa-profile-sheet-notification-time,
+      .sarCa-profile-sheet-terms { color:#c8dcff !important; }
     `;
     document.head.appendChild(style);
   }
