@@ -98,6 +98,7 @@
   var fullMapViewportKey = '';
   var assignedDriverMarker = null;
   var assignedDriverAnimationFrame = null;
+  var lastAssignedDriverHeading = null;
   var assignedDriverOverlay = null;
   var assignedDriverOverlayMoveBound = false;
   var riderLocationMarker = null;
@@ -107,6 +108,7 @@
   var fullMapRecordedRouteSourceId = 'sarCa-recorded-route';
   var fullMapDestinationSourceId = 'sarCa-trip-destination';
   var fullMapPeopleSourceId = 'sarCa-live-people';
+  var mapMarkerAssetBase = 'assets/sarCa/map/';
   var mapDashboardShell = null;
   var mapDashboardPanel = null;
   var mapDashboardPickupInput = null;
@@ -368,6 +370,7 @@
       try { assignedDriverMarker.remove(); } catch (_) {}
     }
     assignedDriverMarker = null;
+    lastAssignedDriverHeading = null;
     if (assignedDriverOverlay && assignedDriverOverlay.parentNode) assignedDriverOverlay.parentNode.removeChild(assignedDriverOverlay);
     assignedDriverOverlay = null;
     assignedDriverOverlayMoveBound = false;
@@ -380,7 +383,7 @@
     riderLocationMarker = null;
   }
 
-  function syncRiderLocationMarker(location) {
+  function syncRiderLocationMarker(location, isPickup) {
     if (!fullMap || !window.mapboxgl || !location ||
         !isFinite(Number(location.latitude)) || !isFinite(Number(location.longitude))) {
       removeRiderLocationMarker();
@@ -389,14 +392,73 @@
     if (!riderLocationMarker) {
       var markerElement = document.createElement('div');
       markerElement.className = 'sarCa-rider-location-marker';
-      markerElement.setAttribute('aria-label', 'Passageiro');
-      markerElement.innerHTML = '<span aria-hidden="true"><i>👤</i></span>';
-      riderLocationMarker = new window.mapboxgl.Marker({ element: markerElement, anchor: 'bottom' })
+      var passengerImage = document.createElement('img');
+      passengerImage.src = mapMarkerAssetBase + 'passenger-top.png';
+      passengerImage.alt = '';
+      passengerImage.draggable = false;
+      markerElement.appendChild(passengerImage);
+      markerElement.setAttribute('aria-label', isPickup ? 'Passageiro no ponto de recolha' : 'Passageiro');
+      riderLocationMarker = new window.mapboxgl.Marker({ element: markerElement, anchor: 'center', rotationAlignment: 'map', pitchAlignment: 'map' })
         .setLngLat([Number(location.longitude), Number(location.latitude)])
         .addTo(fullMap);
     } else {
       riderLocationMarker.setLngLat([Number(location.longitude), Number(location.latitude)]);
     }
+    var riderElement = riderLocationMarker.getElement ? riderLocationMarker.getElement() : null;
+    if (riderElement) {
+      riderElement.classList.toggle('is-pickup', !!isPickup);
+      riderElement.setAttribute('aria-label', isPickup ? 'Passageiro no ponto de recolha' : 'Passageiro');
+    }
+  }
+
+  function normalizeMapHeading(value) {
+    var heading = Number(value);
+    if (!isFinite(heading)) return null;
+    return ((heading % 360) + 360) % 360;
+  }
+
+  function bearingBetweenMapPoints(from, to) {
+    if (!from || !to) return null;
+    var lat1 = Number(from[1]) * Math.PI / 180;
+    var lat2 = Number(to[1]) * Math.PI / 180;
+    var deltaLongitude = (Number(to[0]) - Number(from[0])) * Math.PI / 180;
+    if (![lat1, lat2, deltaLongitude].every(isFinite)) return null;
+    var y = Math.sin(deltaLongitude) * Math.cos(lat2);
+    var x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLongitude);
+    return normalizeMapHeading(Math.atan2(y, x) * 180 / Math.PI);
+  }
+
+  function routeBearingNearDriver(activeTrip, assignedDriver) {
+    var routePoints = lastLiveRoute && Array.isArray(lastLiveRoute.points)
+      ? lastLiveRoute.points
+      : (activeTrip && Array.isArray(activeTrip.planned_route)
+        ? activeTrip.planned_route.map(function (point) {
+            return [Number(point.longitude != null ? point.longitude : point.lng), Number(point.latitude != null ? point.latitude : point.lat)];
+          }).filter(function (point) { return isFinite(point[0]) && isFinite(point[1]); })
+        : []);
+    if (routePoints.length < 2 || !assignedDriver) return null;
+    var latitude = Number(assignedDriver.latitude);
+    var longitude = Number(assignedDriver.longitude);
+    var nearestKm = Infinity;
+    var nearestIndex = -1;
+    routePoints.forEach(function (point, index) {
+      var distance = distanceKmBetween(latitude, longitude, Number(point[1]), Number(point[0]));
+      if (distance < nearestKm) { nearestKm = distance; nearestIndex = index; }
+    });
+    if (nearestIndex < 0 || nearestKm > 0.2) return null;
+    var start = routePoints[Math.max(0, Math.min(routePoints.length - 2, nearestIndex))];
+    var end = routePoints[Math.max(1, Math.min(routePoints.length - 1, nearestIndex + 1))];
+    return bearingBetweenMapPoints(start, end);
+  }
+
+  function resolveAssignedDriverHeading(activeTrip, assignedDriver) {
+    var gpsHeading = normalizeMapHeading(assignedDriver && assignedDriver.heading);
+    var speed = Number(assignedDriver && assignedDriver.speedKmh);
+    var accuracy = Number(assignedDriver && assignedDriver.accuracyMeters);
+    if (gpsHeading != null && isFinite(speed) && speed > 2 && (!isFinite(accuracy) || accuracy <= 50)) return gpsHeading;
+    var routeHeading = routeBearingNearDriver(activeTrip, assignedDriver);
+    if (routeHeading != null) return routeHeading;
+    return lastAssignedDriverHeading;
   }
 
   function syncAssignedDriverMarker(activeTrip, assignedDriver, hasArrived, isStale) {
@@ -406,12 +468,20 @@
       return;
     }
     var target = [Number(assignedDriver.longitude), Number(assignedDriver.latitude)];
+    var resolvedHeading = resolveAssignedDriverHeading(activeTrip, assignedDriver);
+    var previousHeading = lastAssignedDriverHeading;
+    if (resolvedHeading != null) lastAssignedDriverHeading = resolvedHeading;
+    var targetHeading = lastAssignedDriverHeading == null ? 0 : lastAssignedDriverHeading;
     if (!assignedDriverMarker) {
       var markerElement = document.createElement('div');
       markerElement.className = 'sarCa-assigned-driver-marker';
-      markerElement.innerHTML = '<span aria-hidden="true"><i>🚗</i></span>';
+      var carImage = document.createElement('img');
+      carImage.src = mapMarkerAssetBase + 'mini-hatchback-blue-top.png';
+      carImage.alt = '';
+      carImage.draggable = false;
+      markerElement.appendChild(carImage);
       markerElement.setAttribute('aria-label', hasArrived ? 'Motorista chegou ao ponto de recolha' : 'Motorista a caminho');
-      assignedDriverMarker = new window.mapboxgl.Marker({ element: markerElement, anchor: 'bottom' })
+      assignedDriverMarker = new window.mapboxgl.Marker({ element: markerElement, anchor: 'center', rotationAlignment: 'map', pitchAlignment: 'map' })
         .setLngLat(target)
         .addTo(fullMap);
     }
@@ -421,7 +491,7 @@
       markerElement.classList.toggle('is-stale', !!isStale);
       markerElement.setAttribute('aria-label', hasArrived ? 'Motorista chegou ao ponto de recolha' : 'Motorista a caminho');
       markerElement.title = hasArrived ? 'Motorista chegou ao ponto de recolha' : 'Motorista a caminho';
-      markerElement.style.setProperty('--sarCa-heading', (Number(assignedDriver.heading) || 0) + 'deg');
+      markerElement.style.setProperty('--sarCa-heading', targetHeading + 'deg');
     }
     var current = assignedDriverMarker.getLngLat ? assignedDriverMarker.getLngLat() : null;
     var from = current ? [Number(current.lng), Number(current.lat)] : target;
@@ -435,6 +505,8 @@
     }
     var startedAt = performance.now();
     var duration = 850;
+    var headingStart = previousHeading == null ? targetHeading : previousHeading;
+    var headingDelta = ((targetHeading - headingStart + 540) % 360) - 180;
     var animate = function (now) {
       if (!assignedDriverMarker) return;
       var progress = Math.max(0, Math.min(1, (now - startedAt) / duration));
@@ -443,6 +515,9 @@
         from[0] + (target[0] - from[0]) * eased,
         from[1] + (target[1] - from[1]) * eased,
       ]);
+      var animatedHeading = normalizeMapHeading(headingStart + headingDelta * eased);
+      var animatedElement = assignedDriverMarker.getElement ? assignedDriverMarker.getElement() : null;
+      if (animatedElement && animatedHeading != null) animatedElement.style.setProperty('--sarCa-heading', animatedHeading + 'deg');
       if (progress < 1) assignedDriverAnimationFrame = requestAnimationFrame(animate);
       else assignedDriverAnimationFrame = null;
     };
@@ -512,12 +587,24 @@
       latitude: presenceLatitude(assignedPresence),
       longitude: presenceLongitude(assignedPresence),
       heading: presenceHeading(assignedPresence),
+      speedKmh: coordinateValue(assignedPresence, ['speedKmh', 'speed_kmh', 'speed']),
+      accuracyMeters: coordinateValue(assignedPresence, ['accuracyMeters', 'accuracy_meters', 'accuracy']),
     } : null;
     // Durante a viagem iniciada, manter apenas o motorista no mapa reduz a
     // ambiguidade. O ponto do passageiro continua guardado no estado da
     // viagem, mas deixa de competir visualmente com a rota em andamento.
+    var riderMarkerLocation = location;
+    var riderMarkerIsPickup = false;
+    if (activeTrip && liveTrip && String(liveTrip.status || '') !== 'in_progress') {
+      var confirmedPickupLatitude = tripLatitude(liveTrip, 'pickup');
+      var confirmedPickupLongitude = tripLongitude(liveTrip, 'pickup');
+      if (confirmedPickupLatitude != null && confirmedPickupLongitude != null) {
+        riderMarkerLocation = { latitude: confirmedPickupLatitude, longitude: confirmedPickupLongitude };
+        riderMarkerIsPickup = true;
+      }
+    }
     if (activeTrip && String(liveTrip.status || '') === 'in_progress') removeRiderLocationMarker();
-    else syncRiderLocationMarker(location);
+    else syncRiderLocationMarker(riderMarkerLocation, riderMarkerIsPickup);
     var tripWait = lastTripPayload && lastTripPayload.wait;
     var tripStatus = liveTrip ? String(liveTrip.status || '') : '';
     var driverHasArrived = activeTrip && tripStatus === 'driver_arriving' && tripWait && tripWait.state === 'active';
@@ -2891,6 +2978,7 @@
       #sarca-trip-state-card .sarca-trip-state__title { font-weight:750; }
       #sarca-trip-state-card .sarca-trip-state__meta { margin-top:3px; opacity:.78; }
       #sarca-trip-state-card .sarca-trip-state__pin { margin-top:7px; padding:6px 8px; border-radius:9px; background:rgba(25,195,125,.16); color:#a9ffd8; font-weight:750; letter-spacing:.08em; }
+      #sarca-trip-state-card .sarca-trip-state__pin { background:rgba(255,201,54,.18); color:#fff3b0; border:1px solid rgba(255,201,54,.42); }
       #sarca-trip-state-card .sarca-trip-state__progress { display:flex; gap:4px; margin-top:8px; }
       #sarca-trip-state-card .sarca-trip-state__progress i { display:block; height:3px; flex:1; border-radius:99px; background:rgba(255,255,255,.18); }
       #sarca-trip-state-card .sarca-trip-state__progress i.is-done { background:#19c37d; }
@@ -3011,6 +3099,7 @@
       .sarca-extra__offer { margin-top:8px; padding:9px; border:1px solid rgba(255,255,255,.14); border-radius:11px; background:rgba(255,255,255,.06); }
       .sarca-extra__offer-top { display:flex; justify-content:space-between; gap:8px; align-items:center; }
       .sarca-extra__offer-price { font-weight:800; color:#a9ffd8; white-space:nowrap; }
+      .sarca-extra__offer-price { color:#ffc936; }
       .sarca-extra__offer button { width:100%; margin-top:7px; min-height:32px; border:0; border-radius:9px; background:#19c37d; color:#071321; font:inherit; font-weight:750; }
       .sarca-extra__identity span { display:block; opacity:.75; margin-top:2px; font-size:10px; }
       .sarca-extra__line { margin-top:7px; padding:7px 8px; border-radius:9px; background:rgba(255,255,255,.07); }
@@ -3022,6 +3111,7 @@
       .sarca-no-driver-actions .sarca-extra__primary-action { width:auto; min-height:30px; margin-top:0; padding:5px 8px; }
       .sarca-extra__receipt { margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,.14); }
       .sarca-extra__primary-action { width:100%; min-height:36px; margin-top:10px; border:0; border-radius:10px; background:#19c37d; color:#071321; font:inherit; font-weight:800; cursor:pointer; }
+      .sarca-extra__primary-action { background:#1769ff; color:#fff; }
       .sarca-extra__primary-action:disabled { opacity:.65; cursor:wait; }
       .sarca-extra__receipt-row { display:flex; justify-content:space-between; gap:8px; margin-top:4px; }
       .sarca-extra__stars { display:flex; gap:3px; margin-top:6px; }
@@ -3108,6 +3198,8 @@
       .sarCa-assigned-driver-overlay b { padding:3px 6px; border-radius:6px; background:rgba(5,24,38,.94); color:#fff; font:800 11px/1 system-ui,sans-serif; white-space:nowrap; }
       .sarCa-rider-location-marker { width:44px; height:44px; display:flex; align-items:center; justify-content:center; pointer-events:none; filter:drop-shadow(0 2px 4px rgba(0,0,0,.42)); }
       .sarCa-rider-location-marker span { background:#7c3aed; width:24px; height:24px; font-size:12px; }
+      .sarCa-rider-location-marker { width:48px; height:48px; display:grid; place-items:center; }
+      .sarCa-rider-location-marker img { display:block; width:32px; height:32px; object-fit:contain; transform:none; }
       @keyframes sarCa-driver-arrived-pulse { 0%,100% { box-shadow:0 0 0 0 rgba(25,195,125,.55); } 50% { box-shadow:0 0 0 9px rgba(25,195,125,0); } }
       .sarCa-assigned-driver-overlay.is-arrived span { animation:sarCa-driver-arrived-pulse 1.15s ease-in-out infinite; background:#16a34a; }
       .sarCa-assigned-driver-overlay.is-stale span { filter:grayscale(.72); opacity:.68; }
@@ -3116,6 +3208,11 @@
       .sarCa-assigned-driver-marker span i { display:block; font-style:normal; transform:rotate(45deg); }
       .sarCa-assigned-driver-marker.is-arrived span { animation:sarCa-driver-arrived-pulse 1.15s ease-in-out infinite; background:#16a34a; }
       .sarCa-assigned-driver-marker.is-stale span { filter:grayscale(.72); opacity:.68; }
+      /* Native Mapbox marker: centred on GPS and rotated with the map. */
+      .sarCa-assigned-driver-marker { width:48px; height:48px; display:grid; place-items:center; transform:none; }
+      .sarCa-assigned-driver-marker img { display:block; width:32px; height:32px; object-fit:contain; transform:rotate(var(--sarCa-heading, 0deg)); transform-origin:center; transition:filter .18s ease, opacity .18s ease; }
+      .sarCa-assigned-driver-marker.is-arrived img { animation:sarCa-driver-arrived-pulse 1.15s ease-in-out infinite; }
+      .sarCa-assigned-driver-marker.is-stale img { filter:grayscale(.72); opacity:.68; }
       .sarCa-passenger-recenter-button { position:fixed; top:max(78px,calc(env(safe-area-inset-top) + 70px)); left:50%; transform:translateX(-50%); z-index:28; border:1px solid rgba(255,255,255,.72); border-radius:999px; padding:9px 15px; background:#1769ff; color:#fff; box-shadow:0 7px 20px rgba(0,0,0,.28); font:800 12px/1 system-ui,sans-serif; cursor:pointer; }
       .sarCa-passenger-recenter-button[hidden] { display:none !important; }
       .sarCa-full-map-ready #sarCa-full-map-surface { display:block; }
@@ -5547,7 +5644,7 @@
 
   function presenceHeading(presence) {
     var value = coordinateValue(presence, ['headingDegrees', 'heading_degrees', 'heading', 'bearing']);
-    return value != null && isFinite(Number(value)) ? Number(value) : 0;
+    return value != null && isFinite(Number(value)) ? Number(value) : null;
   }
 
   function appendPickupReferenceEditor(container) {
