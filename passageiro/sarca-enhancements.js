@@ -7478,11 +7478,11 @@
   }
 
   async function refreshTripTracking(tripId) {
-    var accessToken = readAccessToken();
-    if (!accessToken) return;
+    var authorization = await getAuthenticatedAuthHeader();
+    if (!authorization) return;
     try {
       var response = await fetch(SARCA_SUPABASE_URL + '/functions/v1/sarca-trip-live-tracking?tripId=' + encodeURIComponent(tripId), {
-        headers: { 'Authorization': 'Bearer ' + accessToken, 'apikey': SARCA_SUPABASE_KEY },
+        headers: { 'Authorization': authorization, 'apikey': SARCA_SUPABASE_KEY },
       });
       if (!response.ok) return null;
       var payload = await response.json();
@@ -7496,7 +7496,16 @@
   var activePassengerTripRestoreInFlight = false;
   var activePassengerTripRestoreTimer = null;
   var activePassengerTripCacheKey = 'sarCa-active-trip-cache-v1';
-    var activePassengerTripStatuses = ['searching_driver', 'offered_to_driver', 'driver_assigned', 'driver_arriving', 'in_progress', 'payment_pending', 'completed'];
+  var activePassengerTripStatuses = ['searching_driver', 'offered_to_driver', 'driver_assigned', 'driver_arriving', 'in_progress', 'payment_pending', 'completed'];
+
+  function passengerTripNeedsCrossDeviceSync() {
+    var trip = lastTripPayload && lastTripPayload.trip;
+    if (!trip) return true;
+    var status = String(trip.status || '').toLowerCase();
+    // Payment and rating are local passenger actions after the service. Do not
+    // let the active-trip poll replace those cards with an empty active list.
+    return ['completed', 'payment_pending'].indexOf(status) === -1;
+  }
 
   function cacheActivePassengerTrip(payload) {
     try {
@@ -7534,66 +7543,61 @@
   }
   function restoreActivePassengerTrip() {
     if (activePassengerTripRestoreInFlight) return;
-    var authorization = lastAuthHeader || loadStoredAuthHeader();
-    if (!authorization) return;
     activePassengerTripRestoreInFlight = true;
-    fetch(SARCA_SUPABASE_URL + '/functions/v1/sarca-list-my-trips?limit=50', {
-      headers: { Authorization: authorization, apikey: SARCA_SUPABASE_KEY },
-    }).then(function (response) {
-      return response.ok ? response.json() : null;
-    }).then(function (payload) {
-      var trips = payload && Array.isArray(payload.trips) ? payload.trips : [];
-      var activeStatuses = ['searching_driver', 'offered_to_driver', 'driver_assigned', 'driver_arriving', 'in_progress', 'payment_pending'];
-      var activeTrips = trips.filter(function (trip) {
-        if (!trip || activeStatuses.indexOf(String(trip.status || '').toLowerCase()) === -1) return false;
-        var status = String(trip.status || '').toLowerCase();
-        var tripId = String(trip.id || trip.trip_id || '');
-        // A completed trip that was already rated must never win restoration
-        // over the current request or reopen the rating card on refresh.
-        if (status === 'payment_pending' &&
-            (trip.my_rating || trip.myRating || passengerRatedTrip(tripId))) return false;
-        return true;
-      });
-      activeTrips.sort(function (left, right) {
-        var leftDate = new Date(left.updated_at || left.updatedAt || left.created_at || left.createdAt || 0).getTime();
-        var rightDate = new Date(right.updated_at || right.updatedAt || right.created_at || right.createdAt || 0).getTime();
-        return rightDate - leftDate;
-      });
-      var trip = activeTrips[0];
-      var tripId = trip && (trip.id || trip.trip_id);
-      if (!tripId) return null;
-      return fetch(SARCA_SUPABASE_URL + '/functions/v1/sarca-trip-live-tracking?tripId=' + encodeURIComponent(tripId), {
+    getAuthenticatedAuthHeader().then(function (authorization) {
+      if (!authorization) return null;
+      return fetch(SARCA_SUPABASE_URL + '/functions/v1/sarca-list-my-trips?limit=50&active=true', {
         headers: { Authorization: authorization, apikey: SARCA_SUPABASE_KEY },
-      }).then(function (trackingResponse) {
-        if (!trackingResponse.ok) return { trip: trip };
-        return trackingResponse.json().then(function (tracking) {
-          if (!tracking || typeof tracking !== 'object') return { trip: trip };
-          if (!tracking.trip) tracking.trip = trip;
-          return tracking;
+      }).then(function (response) {
+        return response.ok ? response.json() : null;
+      }).then(function (payload) {
+        var trips = payload && Array.isArray(payload.trips) ? payload.trips : [];
+        var activeTrips = trips.filter(function (trip) {
+          if (!trip || activePassengerTripStatuses.indexOf(String(trip.status || '').toLowerCase()) === -1) return false;
+          var status = String(trip.status || '').toLowerCase();
+          var tripId = String(trip.id || trip.trip_id || '');
+          // A completed trip that was already rated must never win restoration
+          // over the current request or reopen the rating card on refresh.
+          if (status === 'payment_pending' &&
+              (trip.my_rating || trip.myRating || passengerRatedTrip(tripId))) return false;
+          return true;
         });
+        activeTrips.sort(function (left, right) {
+          var leftDate = new Date(left.updated_at || left.updatedAt || left.created_at || left.createdAt || 0).getTime();
+          var rightDate = new Date(right.updated_at || right.updatedAt || right.created_at || right.createdAt || 0).getTime();
+          return rightDate - leftDate;
+        });
+        var trip = activeTrips[0];
+        var tripId = trip && (trip.id || trip.trip_id);
+        if (!tripId) return null;
+        return fetch(SARCA_SUPABASE_URL + '/functions/v1/sarca-trip-live-tracking?tripId=' + encodeURIComponent(tripId), {
+          headers: { Authorization: authorization, apikey: SARCA_SUPABASE_KEY },
+        }).then(function (trackingResponse) {
+          if (!trackingResponse.ok) return { trip: trip };
+          return trackingResponse.json().then(function (tracking) {
+            if (!tracking || typeof tracking !== 'object') return { trip: trip };
+            if (!tracking.trip) tracking.trip = trip;
+            return tracking;
+          });
+        });
+      }).then(function (trackingPayload) {
+        if (!trackingPayload || !trackingPayload.trip) {
+          // An empty list is not enough to erase a visible active request:
+          // another device can be between the request and dispatch commits,
+          // and a transient read can otherwise hide the live search card.
+          if (passengerTripIsOpen(lastTripPayload && lastTripPayload.trip)) return;
+          if (!passengerTripNeedsCrossDeviceSync()) return;
+          clearPendingPassengerRating();
+          lastTripPayload = null;
+          renderTripState({ trip: null });
+          return;
+        }
+        var existingTrip = lastTripPayload && lastTripPayload.trip;
+        if (passengerTripIsOpen(existingTrip) && String(existingTrip.id || '') !== String(trackingPayload.trip.id || '')) return;
+        lastTripPayload = trackingPayload;
+        cacheActivePassengerTrip(trackingPayload);
+        renderTripState(trackingPayload);
       });
-    }).then(function (trackingPayload) {
-      if (!trackingPayload || !trackingPayload.trip) {
-        // The server is authoritative: once there is no active trip, clear
-        // any stale payment/search card kept by a previous browser session.
-        // A list request can, however, finish from before a new request was
-        // created. Never let that older empty response interrupt the trip that
-        // is already visible and being tracked in this session.
-        if (passengerTripIsOpen(lastTripPayload && lastTripPayload.trip)) return;
-        clearPendingPassengerRating();
-        lastTripPayload = null;
-        renderTripState({ trip: null });
-        return;
-      }
-      var existingTrip = lastTripPayload && lastTripPayload.trip;
-      if (passengerTripIsOpen(existingTrip) && String(existingTrip.id || '') !== String(trackingPayload.trip.id || '')) return;
-      lastTripPayload = trackingPayload;
-      cacheActivePassengerTrip(trackingPayload);
-      renderTripState(trackingPayload);
-      if (activePassengerTripRestoreTimer) {
-        clearInterval(activePassengerTripRestoreTimer);
-        activePassengerTripRestoreTimer = null;
-      }
     }).catch(function () {}).finally(function () {
       activePassengerTripRestoreInFlight = false;
     });
@@ -8873,14 +8877,13 @@
     setTimeout(restoreActivePassengerTrip, 900);
     setTimeout(restoreActivePassengerTrip, 2600);
     setTimeout(restoreLatestPassengerRating, 3400);
+    // The active trip belongs to the account, not to this browser session.
+    // Keep reconciling it while the rider is visible so a second phone sees
+    // the same search/assignment phase without needing a refresh.
     activePassengerTripRestoreTimer = setInterval(function () {
-      if (lastTripPayload && lastTripPayload.trip) {
-        clearInterval(activePassengerTripRestoreTimer);
-        activePassengerTripRestoreTimer = null;
-        return;
-      }
+      if (document.visibilityState !== 'visible' || !passengerTripNeedsCrossDeviceSync()) return;
       restoreActivePassengerTrip();
-    }, 5000);
+    }, 3500);
     if (lastCurrentLocation) {
       startRiderLocationPublishing();
       startNearbyDriversPolling();
