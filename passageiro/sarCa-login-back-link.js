@@ -7,7 +7,9 @@
   function isAuthSurface() {
     try {
       if (new URLSearchParams(window.location.search).get('sarCa-original') === '1') return true;
-      if (document.getElementById('sarCa-map-dashboard-shell')) return false;
+      if (document.getElementById('sarCa-map-dashboard-shell') ||
+          document.getElementById('sarCa-full-map-surface') ||
+          document.getElementById('sarCa-full-map-canvas')) return false;
     } catch (_) {}
     var text = String(document.body && document.body.innerText || '').toLowerCase();
     return /entrar como (passageiro|motorista)|criar conta triunfal|número de telemóvel/.test(text) || !document.getElementById('sarCa-map-dashboard-shell');

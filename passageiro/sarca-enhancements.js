@@ -44,9 +44,11 @@
   function installRiderSingleTapGuard() {
     if (riderSingleTapGuardInstalled) return;
     riderSingleTapGuardInstalled = true;
-    // Network actions already use riderActionInFlight. This short capture
-    // guard also absorbs rapid double-taps on navigation, modal and payment
-    // buttons before two event handlers can be scheduled by the WebView.
+    // Network actions already use riderActionInFlight. This capture guard also
+    // absorbs rapid double-taps on navigation, modal and payment buttons
+    // before two event handlers can be scheduled by the WebView. The lock is
+    // deliberately longer than a normal WebView double-tap window; the
+    // action-specific lanes below remain locked until the server response.
     document.addEventListener('click', function (event) {
       var target = event.target;
       var button = target && target.closest ? target.closest('button,[role="button"]') : null;
@@ -60,7 +62,7 @@
       window.setTimeout(function () {
         if (!button || !button.isConnected) return;
         delete button.dataset.sarcaTapLocked;
-      }, 900);
+      }, 1600);
     }, true);
   }
   var voiceMode = 'voice';
@@ -7296,6 +7298,8 @@
 
   async function cancelTripWhileSearchingConfirmed(tripId, button, messageNode) {
     if (!tripId || !button) return;
+    var actionKey = 'cancel-search:' + String(tripId);
+    if (!beginRiderAction(actionKey)) return;
     button.disabled = true;
     button.textContent = 'A cancelar…';
     try {
@@ -7322,6 +7326,8 @@
       button.disabled = false;
       button.textContent = 'CANCELAR PROCURA';
       if (messageNode) messageNode.textContent = error && error.message ? error.message : 'Não foi possível cancelar agora.';
+    } finally {
+      endRiderAction(actionKey);
     }
   }
 
@@ -7570,6 +7576,10 @@
       if (!trackingPayload || !trackingPayload.trip) {
         // The server is authoritative: once there is no active trip, clear
         // any stale payment/search card kept by a previous browser session.
+        // A list request can, however, finish from before a new request was
+        // created. Never let that older empty response interrupt the trip that
+        // is already visible and being tracked in this session.
+        if (passengerTripIsOpen(lastTripPayload && lastTripPayload.trip)) return;
         clearPendingPassengerRating();
         lastTripPayload = null;
         renderTripState({ trip: null });
@@ -7949,9 +7959,12 @@
       list.textContent = 'Ainda não há mensagens nesta viagem. Podes enviar a primeira.';
     });
     var send = profileSheetButton('Enviar mensagem', function () {
+      var sendActionKey = 'trip-chat-send:' + String(trip.id || '');
+      if (!beginRiderAction(sendActionKey)) return;
       var body = String(input.value || '').trim();
       if (!body) {
         profileSheetMessage(sheet, 'Escreve uma mensagem antes de enviar.', 'is-error');
+        endRiderAction(sendActionKey);
         return;
       }
       send.disabled = true;
@@ -7962,7 +7975,10 @@
         profileSheetMessage(sheet, 'Mensagem enviada ao motorista.', 'is-success');
       }).catch(function (error) {
         profileSheetMessage(sheet, error.message || 'Não foi possível enviar a mensagem.', 'is-error');
-      }).finally(function () { send.disabled = false; });
+      }).finally(function () {
+        send.disabled = false;
+        endRiderAction(sendActionKey);
+      });
     });
     sheet.appendChild(send);
     window.dispatchEvent(new CustomEvent('sarCa:open-trip-chat', { detail: { tripId: trip.id } }));
@@ -8721,8 +8737,15 @@
     var currentTrip = lastTripPayload && lastTripPayload.trip;
     var currentTripId = currentTrip && String(currentTrip.id || currentTrip.trip_id || '');
     var activeStatuses = ['searching_driver', 'offered_to_driver', 'driver_assigned', 'driver_arriving', 'in_progress'];
-    if (incomingTripId && currentTripId && incomingTripId !== currentTripId &&
-        activeStatuses.indexOf(String(currentTrip.status || '').toLowerCase()) !== -1) return;
+    if (incomingTripId && currentTripId && incomingTripId !== currentTripId) {
+      var currentStatus = String(currentTrip.status || '').toLowerCase();
+      // Never let a late response from an old request replace an active,
+      // payment-pending or just-completed trip. A new request clears the
+      // previous snapshot first, so a different trip is accepted only after
+      // that explicit transition.
+      if (activeStatuses.indexOf(currentStatus) !== -1 ||
+          ['payment_pending', 'completed'].indexOf(currentStatus) !== -1) return;
+    }
     if (url.indexOf('preview-trip-offers') !== -1) {
       lastPreviewPayload = payload;
       // The preload is only for showing the four category prices. The
