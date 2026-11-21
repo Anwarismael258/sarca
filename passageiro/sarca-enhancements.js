@@ -216,7 +216,7 @@
       if (viewportKey === fullMapViewportKey) return;
       fullMapViewportKey = viewportKey;
       try { fullMap.resize(); } catch (_) {}
-      try { fullMap.fitBounds(bounds, { padding: { top: 110, right: 28, bottom: 290, left: 28 }, maxZoom: 16.2, duration: 450 }); } catch (_) {}
+      try { fullMap.fitBounds(bounds, { padding: passengerMapPadding(), retainPadding: false, maxZoom: 17, duration: 450 }); } catch (_) {}
       return;
     }
     var pointKey = (Math.round(Number(location.longitude) * 1000) / 1000) + ',' + (Math.round(Number(location.latitude) * 1000) / 1000);
@@ -302,6 +302,20 @@
     return 16.8;
   }
 
+  function passengerMapPadding() {
+    var map = fullMap.getContainer().getBoundingClientRect();
+    var panel = document.getElementById('sarca-trip-state-card');
+    var panelBounds = panel && panel.getBoundingClientRect();
+    var obscured = panelBounds && panelBounds.height > 0 && panelBounds.top > map.top
+      ? Math.max(0, map.bottom - panelBounds.top) : 0;
+    return {
+      top: Math.min(86, Math.round(map.height * 0.16)),
+      bottom: Math.min(Math.round(map.height * 0.55), Math.round(obscured) + 32),
+      left: 32,
+      right: 32,
+    };
+  }
+
   function followPassengerCamera(payload, force) {
     var trip = activePassengerTrip(payload);
     var presence = getAssignedDriverPresence(payload);
@@ -354,21 +368,19 @@
     try {
       if (passengerCameraNeedsInitialFit || force) {
         fullMap.fitBounds([driverPoint, targetPoint], {
-          padding: { top: 110, right: 28, bottom: 250, left: 28 },
-          maxZoom: 16.3,
+          padding: passengerMapPadding(),
+          retainPadding: false,
+          maxZoom: 17.2,
           duration: 550,
         });
         passengerCameraNeedsInitialFit = false;
         return;
       }
-      fullMap.easeTo({
-        center: driverPoint,
-        zoom: passengerCameraZoom(payload, target),
-        bearing: 0,
-        pitch: 0,
-        offset: [0, 110],
+      fullMap.fitBounds([driverPoint, targetPoint], {
+        padding: passengerMapPadding(),
+        retainPadding: false,
+        maxZoom: passengerCameraZoom(payload, target),
         duration: 650,
-        essential: true,
       });
     } catch (_) {}
   }
@@ -526,7 +538,7 @@
       }
     }
     var accuracy = Number(assignedDriver.accuracyMeters);
-    var snapLimitKm = isFinite(accuracy) ? Math.max(0.05, Math.min(0.15, accuracy / 1000 * 2.5)) : 0.08;
+    var snapLimitKm = accuracy > 0 ? Math.max(0.012, Math.min(0.028, accuracy / 1000 * 1.5)) : 0.02;
     return best && best.distanceKm <= snapLimitKm ? best : null;
   }
 
@@ -610,21 +622,21 @@
       markerElement.classList.toggle('is-stale', !!isStale);
       markerElement.setAttribute('aria-label', hasArrived ? 'Motorista chegou ao ponto de recolha' : 'Motorista a caminho');
       markerElement.title = hasArrived ? 'Motorista chegou ao ponto de recolha' : 'Motorista a caminho';
-      markerElement.style.setProperty('--sarCa-heading', targetHeading + 'deg');
     }
-    var current = assignedDriverMarker.getLngLat ? assignedDriverMarker.getLngLat() : null;
-    var from = current ? [Number(current.lng), Number(current.lat)] : target;
-    if (!isFinite(from[0]) || !isFinite(from[1]) ||
-        (Math.abs(from[0] - target[0]) < 0.000001 && Math.abs(from[1] - target[1]) < 0.000001)) {
-      assignedDriverMarker.setLngLat(target);
-      return;
-    }
+    var current = assignedDriverMarker.getLngLat();
+    var from = current ? [current.lng, current.lat] : target;
     if (assignedDriverAnimationFrame) {
-      try { cancelAnimationFrame(assignedDriverAnimationFrame); } catch (_) {}
+      cancelAnimationFrame(assignedDriverAnimationFrame);
+      assignedDriverAnimationFrame = null;
+    }
+    if (!current || (Math.abs(from[0] - target[0]) < 0.000001 &&
+        Math.abs(from[1] - target[1]) < 0.000001 && previousHeading === targetHeading)) {
+      assignedDriverMarker.setLngLat(target).setRotation(targetHeading);
+      return;
     }
     var startedAt = performance.now();
     var duration = 850;
-    var headingStart = previousHeading == null ? targetHeading : previousHeading;
+    var headingStart = previousHeading == null ? targetHeading : assignedDriverMarker.getRotation();
     var headingDelta = ((targetHeading - headingStart + 540) % 360) - 180;
     var animate = function (now) {
       if (!assignedDriverMarker) return;
@@ -635,8 +647,7 @@
         from[1] + (target[1] - from[1]) * eased,
       ]);
       var animatedHeading = normalizeMapHeading(headingStart + headingDelta * eased);
-      var animatedElement = assignedDriverMarker.getElement ? assignedDriverMarker.getElement() : null;
-      if (animatedElement && animatedHeading != null) animatedElement.style.setProperty('--sarCa-heading', animatedHeading + 'deg');
+      assignedDriverMarker.setRotation(animatedHeading);
       if (progress < 1) assignedDriverAnimationFrame = requestAnimationFrame(animate);
       else assignedDriverAnimationFrame = null;
     };
@@ -831,11 +842,18 @@
           data: { type: 'FeatureCollection', features: [] },
         });
         fullMap.addLayer({
+          id: fullMapRouteSourceId + '-outline',
+          type: 'line',
+          source: fullMapRouteSourceId,
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: { 'line-color': '#fff', 'line-width': ['interpolate', ['linear'], ['zoom'], 13, 5, 18, 10] },
+        });
+        fullMap.addLayer({
           id: fullMapRouteSourceId,
           type: 'line',
           source: fullMapRouteSourceId,
           layout: { 'line-cap': 'round', 'line-join': 'round' },
-          paint: { 'line-color': '#1769ff', 'line-width': 5, 'line-opacity': 0.9 },
+          paint: { 'line-color': '#1769ff', 'line-width': ['interpolate', ['linear'], ['zoom'], 13, 3, 18, 7], 'line-opacity': 1 },
         });
         source = fullMap.getSource(fullMapRouteSourceId);
       } catch (_) { return; }
@@ -3322,7 +3340,7 @@
       /* Native Mapbox marker: the image is centred on the GPS coordinate and
          rotates with the map, so it stays aligned to the road after gestures. */
       .sarCa-assigned-driver-marker { width:48px; height:48px; display:grid; place-items:center; transform:none; }
-      .sarCa-assigned-driver-marker img { display:block; width:32px; height:32px; object-fit:contain; transform:rotate(var(--sarCa-heading, 0deg)); transform-origin:center; transition:filter .18s ease, opacity .18s ease; }
+      .sarCa-assigned-driver-marker img { display:block; width:32px; height:32px; object-fit:contain; transform-origin:center; transition:filter .18s ease, opacity .18s ease; }
       .sarCa-assigned-driver-marker.is-arrived img { animation:sarCa-driver-arrived-pulse 1.15s ease-in-out infinite; }
       .sarCa-assigned-driver-marker.is-stale img { filter:grayscale(.72); opacity:.68; }
       .sarCa-nearby-driver-marker { width:34px; height:34px; display:grid; place-items:center; pointer-events:none; filter:drop-shadow(0 2px 4px rgba(0,0,0,.48)); }
